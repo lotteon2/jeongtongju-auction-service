@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: auction-service
+  config:
+    import: optional:configserver:http://localhost:8888
