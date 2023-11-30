@@ -14,5 +14,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuctionDetailResponseDto {
   private AuctionResponseDto auction;
-  private List<AuctionProductResponseDto> productList;
+  private List<? extends AuctionProductResponseDto> productList;
 }
