@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @SuperBuilder
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class AuctionProductBidResponseDto extends AuctionProductResponseDto {
   private Long consumerId;
   private Long lastBidPrice;

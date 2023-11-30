@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @SuperBuilder
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AdminAuctionResponseDto extends AuctionResponseDto {
   private Long wait;
