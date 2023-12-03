@@ -14,4 +14,6 @@ import lombok.NoArgsConstructor;
 public class SellerAuctionResponseDto {
   private String auctionId;
   private String title;
+  private Long currentParticipants;
+  private Long maxParticipants;
 }
