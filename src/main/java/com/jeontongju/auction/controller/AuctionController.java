@@ -13,8 +13,5 @@ public class AuctionController {
 
   private final AuctionService auctionService;
 
-  @GetMapping("/test")
-  public String test() {
-    return "test";
-  }
+  
 }
