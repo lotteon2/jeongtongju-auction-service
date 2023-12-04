@@ -2,10 +2,8 @@ package com.jeontongju.auction.repository.querydsl;
 
 import static com.jeontongju.auction.domain.QAuction.auction;
 import static com.jeontongju.auction.domain.QAuctionProduct.auctionProduct;
-import static com.querydsl.core.group.GroupBy.groupBy;
 
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
-import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -21,7 +19,6 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
 
   @Override
   public Optional<SellerAuctionResponseDto> findRegistrableAuction() {
-
     SellerAuctionResponseDto result = jpaQueryFactory
         .select(
             Projections.fields(
@@ -44,4 +41,5 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
 
     return Optional.ofNullable(result);
   }
+
 }

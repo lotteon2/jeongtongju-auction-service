@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
+import com.jeontongju.auction.domain.BidInfo;
+import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
 import java.time.LocalDate;
@@ -13,8 +15,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,8 +46,15 @@ public class AuctionRepositoryTest {
   @Autowired
   private AuctionProductRepository auctionProductRepository;
 
+  @Autowired
+  private BidInfoRepository bidInfoRepository;
+
+  @Autowired
+  private EntityManager entityManager;
+
   private Auction initAuction;
   private List<AuctionProduct> initProductList;
+  private List<BidInfo> initBidInfoList;
 
   @BeforeEach
   void before() {
@@ -106,7 +119,39 @@ public class AuctionRepositoryTest {
     assertEquals(responseDto.getTitle(), "제 20회 복순도가 경매대회");
     assertEquals(responseDto.getCurrentParticipants(), 3);
   }
-  
+
+  @Test
+  @Order(6)
+  @DisplayName("셀러 - 출품 내역 조회")
+  void getAuctionEntries() {
+    initProductList = initAuctionProduct();
+    auctionProductRepository.saveAll(initProductList);
+    AuctionProduct auctionProduct = auctionProductRepository.findByName("복순도가").orElseThrow(
+        EntityNotFoundException::new);
+
+    initBidInfoList = initBidInfo();
+    initBidInfoList = initBidInfoList.stream()
+        .map(bidInfo -> bidInfo.toBuilder().auctionProduct(auctionProduct).build())
+        .collect(Collectors.toList());
+    bidInfoRepository.saveAll(initBidInfoList);
+
+    entityManager.flush();
+    entityManager.clear();
+
+    Page<SellerAuctionEntriesResponseDto> response = auctionProductRepository.findAuctionProductBySellerId(
+        1L, PageRequest.of(0, 10)).map(SellerAuctionEntriesResponseDto::new);
+
+    response.forEach(dto -> {
+      if (dto.getAuctionProductName().equals("복순도가")) {
+        assertEquals(dto.getLastBidPrice(), 12000);
+        assertEquals(dto.getTotalBid(), 3);
+      } else {
+        assertEquals(dto.getLastBidPrice(), null);
+        assertEquals(dto.getTotalBid(), null);
+      }
+    });
+
+  }
 
   private Auction initAuction() {
     return Auction.builder()
@@ -119,7 +164,7 @@ public class AuctionRepositoryTest {
   private List<AuctionProduct> initAuctionProduct() {
     List<AuctionProduct> list = new ArrayList<>();
 
-    AuctionProduct auctionProduct1 = AuctionProduct.builder()
+    AuctionProduct auctionProduct = AuctionProduct.builder()
         .auction(initAuction)
         .name("복순도가")
         .startingPrice(10000L)
@@ -135,9 +180,38 @@ public class AuctionRepositoryTest {
         .businessmanName("김덤보")
         .build();
 
-    list.add(auctionProduct1);
-    list.add(auctionProduct1.toBuilder().name("안동소주").build());
-    list.add(auctionProduct1.toBuilder().name("막걸리나").build());
+    list.add(auctionProduct);
+    list.add(auctionProduct.toBuilder().name("안동소주").build());
+    list.add(auctionProduct.toBuilder().name("막걸리나").build());
+
+    return list;
+  }
+
+  private List<BidInfo> initBidInfo() {
+    List<BidInfo> list = new ArrayList<>();
+
+    BidInfo bidInfo1 = BidInfo.builder()
+        .auction(initAuction)
+        .consumerId(1L)
+        .bidPrice(10000L)
+        .build();
+
+    BidInfo bidInfo2 = BidInfo.builder()
+        .auction(initAuction)
+        .consumerId(2L)
+        .bidPrice(11000L)
+        .build();
+
+    BidInfo bidInfo3 = BidInfo.builder()
+        .auction(initAuction)
+        .consumerId(1L)
+        .bidPrice(12000L)
+        .isBid(true)
+        .build();
+
+    list.add(bidInfo1);
+    list.add(bidInfo2);
+    list.add(bidInfo3);
 
     return list;
   }
