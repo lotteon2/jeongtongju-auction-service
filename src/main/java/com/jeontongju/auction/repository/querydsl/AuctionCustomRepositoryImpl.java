@@ -2,8 +2,10 @@ package com.jeontongju.auction.repository.querydsl;
 
 import static com.jeontongju.auction.domain.QAuction.auction;
 import static com.jeontongju.auction.domain.QAuctionProduct.auctionProduct;
+import static com.querydsl.core.group.GroupBy.groupBy;
 
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
+import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -19,17 +21,10 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
 
   @Override
   public Optional<SellerAuctionResponseDto> findRegistrableAuction() {
-    String latestAuctionId = jpaQueryFactory
-        .select(auction.auctionId)
-        .from(auction)
-        .where(auction.status.eq(AuctionStatusEnum.BEFORE))
-        .orderBy(auction.startDate.desc())
-        .limit(1)
-        .fetchOne();
 
     SellerAuctionResponseDto result = jpaQueryFactory
         .select(
-            Projections.constructor(
+            Projections.fields(
                 SellerAuctionResponseDto.class,
                 auction.auctionId,
                 auction.title,
@@ -37,12 +32,13 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
             )
         )
         .from(auction)
-        .join(auction.auctionProductList)
-        .fetchJoin()
+        .leftJoin(auction.auctionProductList, auctionProduct)
         .where(
             auction.isDeleted.isFalse(),
-            auction.auctionId.eq(latestAuctionId)
+            auction.status.eq(AuctionStatusEnum.BEFORE)
         )
+        .orderBy(auction.startDate.desc())
+        .limit(1)
         .groupBy(auction.auctionId)
         .fetchOne();
 

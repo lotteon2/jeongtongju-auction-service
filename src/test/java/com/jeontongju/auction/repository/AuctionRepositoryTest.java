@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import javax.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,9 +47,6 @@ public class AuctionRepositoryTest {
   void before() {
     initAuction = initAuction();
     auctionRepository.save(initAuction);
-
-    initProductList = initAuctionProduct();
-    auctionProductRepository.saveAll(initProductList);
   }
 
   @Test
@@ -98,11 +97,14 @@ public class AuctionRepositoryTest {
   @Order(5)
   @DisplayName("셀러 - 등록 가능한 경매 조회")
   void getRegistrableAuction() {
-    SellerAuctionResponseDto auction = auctionRepository.findRegistrableAuction()
+    initProductList = initAuctionProduct();
+    auctionProductRepository.saveAll(initProductList);
+
+    SellerAuctionResponseDto responseDto = auctionRepository.findRegistrableAuction()
         .orElseThrow(AuctionNotFoundException::new);
-    
-    assertEquals(auction.getTitle(), "제 20회 복순도가 경매대회");
-    
+
+    assertEquals(responseDto.getTitle(), "제 20회 복순도가 경매대회");
+    assertEquals(responseDto.getCurrentParticipants(), 3);
   }
   
 
@@ -118,7 +120,7 @@ public class AuctionRepositoryTest {
     List<AuctionProduct> list = new ArrayList<>();
 
     AuctionProduct auctionProduct1 = AuctionProduct.builder()
-        .auction(initAuction())
+        .auction(initAuction)
         .name("복순도가")
         .startingPrice(10000L)
         .description("복순복순")
