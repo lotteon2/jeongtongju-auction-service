@@ -15,5 +15,6 @@ public class SellerAuctionResponseDto {
   private String auctionId;
   private String title;
   private Long currentParticipants;
-  private Long maxParticipants;
+  @Builder.Default
+  private Long maxParticipants = 5L;
 }

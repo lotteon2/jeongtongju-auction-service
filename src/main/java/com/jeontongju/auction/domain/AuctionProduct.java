@@ -1,8 +1,11 @@
 package com.jeontongju.auction.domain;
 
 import com.jeontongju.auction.domain.common.BaseEntity;
+import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -11,13 +14,15 @@ import javax.persistence.ManyToOne;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Getter
-@AllArgsConstructor
+@Builder(toBuilder = true)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AuctionProduct extends BaseEntity {
 
@@ -44,13 +49,15 @@ public class AuctionProduct extends BaseEntity {
   private Long capacity;
 
   @NotNull
-  private Long alcoholDegree;
+  private Double alcoholDegree;
 
   @NotNull
   private String thumbnailImageUrl;
 
   @NotNull
-  private String status;
+  @Builder.Default
+  @Enumerated(EnumType.STRING)
+  private AuctionProductStatusEnum status = AuctionProductStatusEnum.WAIT;
 
   @NotNull
   private Long sellerId;
