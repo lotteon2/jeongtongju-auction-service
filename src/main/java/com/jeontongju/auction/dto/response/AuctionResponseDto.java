@@ -1,6 +1,8 @@
 package com.jeontongju.auction.dto.response;
 
+import com.jeontongju.auction.enums.AuctionStatusEnum;
 import java.time.LocalDateTime;
+import javax.persistence.MappedSuperclass;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,5 +19,5 @@ public class AuctionResponseDto {
   private String description;
   private LocalDateTime startDate;
   private LocalDateTime endDate;
-  private String status;
+  private AuctionStatusEnum status;
 }

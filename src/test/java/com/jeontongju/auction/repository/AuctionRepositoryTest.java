@@ -3,12 +3,16 @@ package com.jeontongju.auction.repository;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
+import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
+import com.jeontongju.auction.enums.AuctionProductStatusEnum;
+import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -110,7 +114,7 @@ public class AuctionRepositoryTest {
   @Order(5)
   @DisplayName("셀러 - 등록 가능한 경매 조회")
   void getRegistrableAuction() {
-    initProductList = initAuctionProduct();
+    initProductList = initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
     SellerAuctionResponseDto responseDto = auctionRepository.findRegistrableAuction()
@@ -124,7 +128,7 @@ public class AuctionRepositoryTest {
   @Order(6)
   @DisplayName("셀러 - 출품 내역 조회")
   void getAuctionEntries() {
-    initProductList = initAuctionProduct();
+    initProductList = initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
     AuctionProduct auctionProduct = auctionProductRepository.findByName("복순도가").orElseThrow(
         EntityNotFoundException::new);
@@ -146,11 +150,51 @@ public class AuctionRepositoryTest {
         assertEquals(dto.getLastBidPrice(), 12000);
         assertEquals(dto.getTotalBid(), 3);
       } else {
-        assertEquals(dto.getLastBidPrice(), null);
-        assertEquals(dto.getTotalBid(), null);
+        assertNull(dto.getLastBidPrice());
+        assertNull(dto.getTotalBid());
       }
     });
+  }
 
+  @Test
+  @Order(7)
+  @DisplayName("관리자 - 경매 목록 조회")
+  public void getAdminAuction() {
+    initProductList = initAuctionProduct(initAuction);
+    auctionProductRepository.saveAll(initProductList);
+
+    Auction auction2 = Auction.builder()
+        .title("제 19회 복순도가 경매대회")
+        .description("복순도가 누가 가져갈 것 인가")
+        .startDate(LocalDateTime.of(LocalDate.now(), LocalTime.of(17, 0)))
+        .status(AuctionStatusEnum.AFTER)
+        .build();
+
+    auctionRepository.save(auction2);
+
+    List<AuctionProduct> initProductList2 = initAuctionProduct(auction2);
+    auctionProductRepository.saveAll(initProductList2);
+
+    entityManager.flush();
+    entityManager.clear();
+
+    Page<AdminAuctionResponseDto> response = auctionRepository.findAll(PageRequest.of(0, 10))
+        .map(AdminAuctionResponseDto::new);
+
+    response.forEach(adminAuctionResponseDto -> {
+          if (adminAuctionResponseDto.getTitle().contains("19회")) {
+            assertEquals(adminAuctionResponseDto.getParticipation(), 1);
+            assertNull(adminAuctionResponseDto.getAllow());
+            assertNull(adminAuctionResponseDto.getDeny());
+            assertNull(adminAuctionResponseDto.getWait());
+          } else {
+            assertEquals(adminAuctionResponseDto.getAllow(), 1);
+            assertEquals(adminAuctionResponseDto.getDeny(), 1);
+            assertEquals(adminAuctionResponseDto.getWait(), 1);
+            assertNull(adminAuctionResponseDto.getParticipation());
+          }
+        }
+    );
   }
 
   private Auction initAuction() {
@@ -161,11 +205,11 @@ public class AuctionRepositoryTest {
         .build();
   }
 
-  private List<AuctionProduct> initAuctionProduct() {
+  private List<AuctionProduct> initAuctionProduct(Auction auction) {
     List<AuctionProduct> list = new ArrayList<>();
 
     AuctionProduct auctionProduct = AuctionProduct.builder()
-        .auction(initAuction)
+        .auction(auction)
         .name("복순도가")
         .startingPrice(10000L)
         .description("복순복순")
@@ -181,8 +225,8 @@ public class AuctionRepositoryTest {
         .build();
 
     list.add(auctionProduct);
-    list.add(auctionProduct.toBuilder().name("안동소주").build());
-    list.add(auctionProduct.toBuilder().name("막걸리나").build());
+    list.add(auctionProduct.toBuilder().name("안동소주").status(AuctionProductStatusEnum.ALLOW).build());
+    list.add(auctionProduct.toBuilder().name("막걸리나").status(AuctionProductStatusEnum.DENY).build());
 
     return list;
   }

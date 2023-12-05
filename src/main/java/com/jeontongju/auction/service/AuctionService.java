@@ -1,6 +1,8 @@
 package com.jeontongju.auction.service;
 
+import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
+import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
@@ -35,6 +37,10 @@ public class AuctionService {
   public Page<SellerAuctionEntriesResponseDto> getAuctionEntries(Long sellerId, Pageable pageable) {
     return auctionProductRepository.findAuctionProductBySellerId(
         sellerId, pageable).map(SellerAuctionEntriesResponseDto::new);
+  }
+
+  public Page<AdminAuctionResponseDto> getAdminAuction(Pageable pageable) {
+    return auctionRepository.findAll(pageable).map(AdminAuctionResponseDto::new);
   }
 
 }
