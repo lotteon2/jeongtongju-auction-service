@@ -20,9 +20,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AuctionService {
 
   private final AuctionRepository auctionRepository;
@@ -104,6 +106,11 @@ public class AuctionService {
     }
   }
 
+  /**
+   * 소비자 - 이번 주 경매 조회 상세
+   * 
+   * @return AuctionDetailResponseDto
+   */
   public AuctionDetailResponseDto getThisAuctionDetail() {
     Auction auction = auctionRepository.findThisAuction().orElseThrow(AuctionNotFoundException::new);
     List<AuctionProductResponseDto> productResponseDtoList =

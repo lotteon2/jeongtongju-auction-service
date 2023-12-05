@@ -10,7 +10,6 @@ import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
-import com.jeontongju.auction.dto.response.AuctionDetailResponseDto.AuctionDetailResponseDtoBuilder;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductResponseDto;
 import com.jeontongju.auction.dto.response.AuctionResponseDto;
@@ -32,7 +31,6 @@ import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.quota.ClientQuotaAlteration.Op;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -226,6 +224,7 @@ public class AuctionRepositoryTest {
         .orElseThrow(AuctionNotFoundException::new);
     auction2 = auctionRepository.findById(auction2.getAuctionId())
         .orElseThrow(AuctionNotFoundException::new);
+    initBidInfoList = bidInfoRepository.findAll();
 
     List<AuctionProductResponseDto> productResponseDtoList =
         Objects.isNull(initAuction.getAuctionProductList()) ? null :
@@ -277,7 +276,8 @@ public class AuctionRepositoryTest {
     return Auction.builder()
         .title(title)
         .description("복순도가 누가 가져갈 것 인가")
-        .startDate(LocalDateTime.of(LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.FRIDAY)), LocalTime.of(17, 0)))
+        .startDate(LocalDateTime.of(LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.FRIDAY)),
+            LocalTime.of(17, 0)))
         .status(auctionStatusEnum)
         .build();
   }
