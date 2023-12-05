@@ -1,23 +1,28 @@
 package com.jeontongju.auction.domain;
 
 import com.jeontongju.auction.domain.common.BaseEntity;
+import com.jeontongju.auction.enums.AuctionStatusEnum;
 import java.time.LocalDateTime;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Getter
-@AllArgsConstructor
+@Builder(toBuilder = true)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Auction extends BaseEntity {
 
@@ -41,10 +46,13 @@ public class Auction extends BaseEntity {
   private LocalDateTime endDate;
 
   @NotNull
-  private String status;
+  @Builder.Default
+  @Enumerated(EnumType.STRING)
+  private AuctionStatusEnum status = AuctionStatusEnum.BEFORE;
 
   @NotNull
-  private Boolean isDeleted;
+  @Builder.Default
+  private Boolean isDeleted = false;
 
   @OneToMany(mappedBy = "auction")
   List<AuctionProduct> auctionProductList;

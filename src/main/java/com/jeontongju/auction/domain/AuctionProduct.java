@@ -1,24 +1,34 @@
 package com.jeontongju.auction.domain;
 
 import com.jeontongju.auction.domain.common.BaseEntity;
+import com.jeontongju.auction.enums.AuctionProductStatusEnum;
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Getter
-@AllArgsConstructor
+@Builder(toBuilder = true)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "auction_product", indexes = @Index(name = "idx_seller_id", columnList = "seller_id"))
 public class AuctionProduct extends BaseEntity {
 
   @Id
@@ -30,6 +40,9 @@ public class AuctionProduct extends BaseEntity {
   @JoinColumn(name = "auction_id")
   @ManyToOne(fetch = FetchType.LAZY)
   private Auction auction;
+
+  @OneToMany(mappedBy = "auctionProduct")
+  private List<BidInfo> bidInfoList;
 
   @NotNull
   private String name;
@@ -44,15 +57,18 @@ public class AuctionProduct extends BaseEntity {
   private Long capacity;
 
   @NotNull
-  private Long alcoholDegree;
+  private Double alcoholDegree;
 
   @NotNull
   private String thumbnailImageUrl;
 
   @NotNull
-  private String status;
+  @Builder.Default
+  @Enumerated(EnumType.STRING)
+  private AuctionProductStatusEnum status = AuctionProductStatusEnum.WAIT;
 
   @NotNull
+  @Column(name = "seller_id")
   private Long sellerId;
 
   @NotNull
