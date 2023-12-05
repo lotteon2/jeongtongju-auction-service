@@ -1,5 +1,6 @@
 package com.jeontongju.auction.controller;
 
+import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.dto.temp.ResponseFormat;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/api/auction")
 public class AuctionController {
 
   private final AuctionService auctionService;
 
-  @GetMapping("/auction/seller")
+  @GetMapping("/seller")
   public ResponseEntity<ResponseFormat<SellerAuctionResponseDto>> getRegistrableAuction() {
 
     return ResponseEntity.ok()
@@ -38,7 +40,7 @@ public class AuctionController {
         );
   }
 
-  @GetMapping("/auction/detail/seller")
+  @GetMapping("/detail/seller")
   public ResponseEntity<ResponseFormat<Page<SellerAuctionEntriesResponseDto>>> getAuctionEntries(
       @RequestHeader Long memberId, @RequestHeader MemberRoleEnum memberRole,
       @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -50,6 +52,22 @@ public class AuctionController {
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 출품 내역 조회 성공")
                 .data(auctionService.getAuctionEntries(memberId, pageable))
+                .build()
+        );
+  }
+
+  @GetMapping("/admin")
+  public ResponseEntity<ResponseFormat<Page<AdminAuctionResponseDto>>> getAdminAuction(
+      @RequestHeader MemberRoleEnum memberRole,
+      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable) {
+
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Page<AdminAuctionResponseDto>>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 출품 내역 조회 성공")
+                .data(auctionService.getAdminAuction(pageable))
                 .build()
         );
   }

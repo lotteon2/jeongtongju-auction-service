@@ -39,6 +39,11 @@ public class AuctionService {
         sellerId, pageable).map(SellerAuctionEntriesResponseDto::new);
   }
 
+  /**
+   * 관리자 - 경매 목록 조회
+   * @param pageable
+   * @return Page<AdminAuctionResponseDto>
+   */
   public Page<AdminAuctionResponseDto> getAdminAuction(Pageable pageable) {
     return auctionRepository.findAll(pageable).map(AdminAuctionResponseDto::new);
   }
