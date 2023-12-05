@@ -1,6 +1,7 @@
 package com.jeontongju.auction.controller;
 
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
+import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.dto.temp.ResponseFormat;
@@ -15,6 +16,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -66,8 +68,28 @@ public class AuctionController {
             ResponseFormat.<Page<AdminAuctionResponseDto>>builder()
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
-                .detail("경매 출품 내역 조회 성공")
+                .detail("경매 목록 조회 성공")
                 .data(auctionService.getAdminAuction(pageable))
+                .build()
+        );
+  }
+
+  @GetMapping("/admin/detail/{auctionId}")
+  public ResponseEntity<ResponseFormat<AuctionDetailResponseDto>> getAdminAuctionDetail(
+      @RequestHeader MemberRoleEnum memberRole, @PathVariable String auctionId) {
+    AuctionDetailResponseDto adminAuctionDetail = auctionService.getAdminAuctionDetail(auctionId);
+    String message = "진행 예정 경매 조회 성공";
+    switch (adminAuctionDetail.getAuction().getStatus()) {
+      case ING: message = "진행 중 경매 조회 성공"; break;
+      case AFTER: message = "진행 완료 경매 조회 성공"; break;
+    }
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<AuctionDetailResponseDto>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail(message)
+                .data(adminAuctionDetail)
                 .build()
         );
   }

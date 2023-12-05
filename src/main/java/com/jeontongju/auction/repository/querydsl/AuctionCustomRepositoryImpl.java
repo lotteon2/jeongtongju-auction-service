@@ -4,6 +4,7 @@ import static com.jeontongju.auction.domain.QAuction.auction;
 import static com.jeontongju.auction.domain.QAuctionProduct.auctionProduct;
 
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
+import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -32,7 +33,8 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
         .leftJoin(auction.auctionProductList, auctionProduct)
         .where(
             auction.isDeleted.isFalse(),
-            auction.status.eq(AuctionStatusEnum.BEFORE)
+            auction.status.eq(AuctionStatusEnum.BEFORE),
+            auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW)
         )
         .orderBy(auction.startDate.desc())
         .limit(1)

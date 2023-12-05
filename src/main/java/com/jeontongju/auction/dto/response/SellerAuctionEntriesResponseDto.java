@@ -2,6 +2,7 @@ package com.jeontongju.auction.dto.response;
 
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
+import com.jeontongju.auction.exception.AuctionProductNotFoundException;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Objects;
@@ -35,10 +36,10 @@ public class SellerAuctionEntriesResponseDto {
         ? null : auctionProduct.getBidInfoList()
         .stream()
         .max(Comparator.comparing(BidInfo::getBidPrice))
-        .orElse(null)
+        .orElseThrow(AuctionProductNotFoundException::new)
         .getBidPrice();
     this.totalBid = auctionProduct.getBidInfoList().isEmpty()
-        ? null : Long.valueOf(auctionProduct.getBidInfoList().size());
+        ? null : (long) auctionProduct.getBidInfoList().size();
     this.auctionProductStatus = auctionProduct.getStatus().name();
   }
 }
