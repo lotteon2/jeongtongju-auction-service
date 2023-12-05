@@ -42,7 +42,7 @@ public class AuctionProduct extends BaseEntity {
   private Auction auction;
 
   @OneToMany(mappedBy = "auctionProduct")
-  List<BidInfo> bidInfoList;
+  private List<BidInfo> bidInfoList;
 
   @NotNull
   private String name;
