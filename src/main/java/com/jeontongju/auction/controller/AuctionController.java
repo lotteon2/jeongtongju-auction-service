@@ -83,6 +83,7 @@ public class AuctionController {
       case ING: message = "진행 중 경매 조회 성공"; break;
       case AFTER: message = "진행 완료 경매 조회 성공"; break;
     }
+
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<AuctionDetailResponseDto>builder()
@@ -90,6 +91,20 @@ public class AuctionController {
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail(message)
                 .data(adminAuctionDetail)
+                .build()
+        );
+  }
+
+  @GetMapping("/consumer/detatil")
+  public ResponseEntity<ResponseFormat<AuctionDetailResponseDto>> getConsumerAuctionDetail() {
+
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<AuctionDetailResponseDto>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 조회 성공")
+                .data(auctionService.getThisAuctionDetail())
                 .build()
         );
   }

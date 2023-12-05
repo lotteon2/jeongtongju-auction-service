@@ -19,9 +19,11 @@ import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -163,7 +165,7 @@ public class AuctionRepositoryTest {
   @Test
   @Order(7)
   @DisplayName("경매 목록 조회 - 경매 상태에 따른 현황(승인, 대기, 거절, 참여 수)")
-  public void getAdminAuction() {
+  void getAdminAuction() {
     initProductList = initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
@@ -204,7 +206,7 @@ public class AuctionRepositoryTest {
   @Test
   @Order(8)
   @DisplayName("특정 경매 상세 조회")
-  public void getAdminAuctionDetail() {
+  void getAdminAuctionDetail() {
     initProductList = initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
@@ -261,11 +263,21 @@ public class AuctionRepositoryTest {
     assertEquals(bid.getLastBidPrice(), 12000);
   }
 
+  @Test
+  @Order(9)
+  @DisplayName("이번 주 금요일 열리는 경매 조회")
+  void getThisAuction() {
+    Auction auction = auctionRepository.findThisAuction()
+        .orElseThrow(AuctionNotFoundException::new);
+
+    assertEquals(auction.getTitle(), "제 20회 복순도가 경매대회");
+  }
+
   private Auction initAuction(String title, AuctionStatusEnum auctionStatusEnum) {
     return Auction.builder()
         .title(title)
         .description("복순도가 누가 가져갈 것 인가")
-        .startDate(LocalDateTime.of(LocalDate.now(), LocalTime.of(17, 0)))
+        .startDate(LocalDateTime.of(LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.FRIDAY)), LocalTime.of(17, 0)))
         .status(auctionStatusEnum)
         .build();
   }

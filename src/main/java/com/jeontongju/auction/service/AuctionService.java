@@ -104,4 +104,22 @@ public class AuctionService {
     }
   }
 
+  public AuctionDetailResponseDto getThisAuctionDetail() {
+    Auction auction = auctionRepository.findThisAuction().orElseThrow(AuctionNotFoundException::new);
+    List<AuctionProductResponseDto> productResponseDtoList =
+        Objects.isNull(auction.getAuctionProductList()) ? null :
+            auction.getAuctionProductList()
+                .stream()
+                .map(AuctionProductResponseDto::new)
+                .collect(Collectors.toList());
+
+    return AuctionDetailResponseDto.builder()
+        .auction(
+            Optional.of(auction).map(AuctionResponseDto::new)
+                .orElseThrow(AuctionNotFoundException::new)
+        )
+        .productList(productResponseDtoList)
+        .build();
+  }
+
 }
