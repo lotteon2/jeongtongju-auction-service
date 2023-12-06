@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
-import com.jeontongju.auction.dto.request.AuctionProductRegistRequestDto;
+import com.jeontongju.auction.dto.request.AuctionProductRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
@@ -279,7 +279,7 @@ public class AuctionRepositoryTest {
   @Order(10)
   @DisplayName("경매 물품 등록 성공")
   void registAuctionProduct() {
-    AuctionProductRegistRequestDto request = AuctionProductRegistRequestDto.builder()
+    AuctionProductRegisterRequestDto request = AuctionProductRegisterRequestDto.builder()
         .auctionId(initAuction.getAuctionId())
         .auctionProductName("복순복순복순도가")
         .startingPrice(10000L)

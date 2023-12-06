@@ -6,15 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
-import com.jeontongju.auction.dto.request.AuctionProductRegistRequestDto;
+import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
-import com.jeontongju.auction.dto.temp.SellerInfoForAuctionDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
-import com.jeontongju.auction.exception.AuctionProductNotFoundException;
+import com.jeontongju.auction.exception.AuctionNotFoundException;
 import com.jeontongju.auction.repository.AuctionProductRepository;
 import com.jeontongju.auction.repository.AuctionRepository;
 import com.jeontongju.auction.repository.BidInfoRepository;
@@ -157,6 +156,24 @@ public class AuctionServiceTest {
 
     assertEquals(thisAuctionDetail.getAuction().getTitle(), "제 20회 복순도가 경매대회");
     assertEquals(thisAuctionDetail.getProductList().get(0).getSellerName(), "덤보네");
+  }
+
+  @Test
+  @DisplayName("경매 생성")
+  void registerAuction() {
+    AuctionRegisterRequestDto request = AuctionRegisterRequestDto.builder()
+        .title("제 30회 경매")
+        .description("경매 생성 테스트")
+        .startDate(LocalDateTime.of(2023, 12, 9, 17, 0))
+        .build();
+
+    auctionService.registerAuction(request);
+
+    Auction result = auctionRepository.findByTitle("제 30회 경매")
+        .orElseThrow(AuctionNotFoundException::new);
+
+    assertEquals(result.getDescription(), "경매 생성 테스트");
+
   }
 
   private Auction initAuction(String title, AuctionStatusEnum auctionStatusEnum) {

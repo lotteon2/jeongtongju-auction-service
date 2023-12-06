@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuctionProductRegistRequestDto {
+public class AuctionProductRegisterRequestDto {
 
   @NotEmpty
   private String auctionId;

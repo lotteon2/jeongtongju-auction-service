@@ -1,6 +1,7 @@
 package com.jeontongju.auction.controller;
 
-import com.jeontongju.auction.dto.request.AuctionProductRegistRequestDto;
+import com.jeontongju.auction.dto.request.AuctionProductRegisterRequestDto;
+import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
@@ -13,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -118,16 +118,31 @@ public class AuctionController {
   }
 
   @PostMapping("/product")
-  public ResponseEntity<ResponseFormat<Void>> registAuctionProduct(
-      @Valid @RequestBody AuctionProductRegistRequestDto request,
+  public ResponseEntity<ResponseFormat<Void>> registerAuctionProduct(
+      @Valid @RequestBody AuctionProductRegisterRequestDto request,
       @RequestHeader Long memberId) {
-    auctionService.registAuctionProduct(request, memberId);
+    auctionService.registerAuctionProduct(request, memberId);
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 물품 등록 성공")
+                .build()
+        );
+  }
+
+  @PostMapping
+  public ResponseEntity<ResponseFormat<Void>> registerAuction(
+      @Valid @RequestBody AuctionRegisterRequestDto request
+  ) {
+    auctionService.registerAuction(request);
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 생성 성공")
                 .build()
         );
   }
