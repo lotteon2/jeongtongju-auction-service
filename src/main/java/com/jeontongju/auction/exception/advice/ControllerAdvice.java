@@ -1,6 +1,8 @@
 package com.jeontongju.auction.exception.advice;
 
 import com.jeontongju.auction.dto.temp.ResponseFormat;
+import com.jeontongju.auction.enums.ResponseEnum;
+import com.jeontongju.auction.exception.OverParticipationException;
 import com.jeontongju.auction.exception.common.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -84,6 +86,21 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
                     e.getBindingResult().getFieldError() == null
                         ? e.getMessage()
                         : e.getBindingResult().getFieldError().getDefaultMessage())
+                .build()
+        );
+  }
+
+  @ExceptionHandler(OverParticipationException.class)
+  public ResponseEntity<ResponseFormat<Void>> handleOverParticipantionExcepion(
+      OverParticipationException e) {
+    HttpStatus status = HttpStatus.OK;
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(status.value())
+                .message(status.name())
+                .detail(e.getMessage())
+                .failure(ResponseEnum.OVER_PARTICIPATION.name())
                 .build()
         );
   }
