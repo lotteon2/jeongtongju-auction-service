@@ -2,8 +2,8 @@ package com.jeontongju.auction.service;
 
 import com.jeontongju.auction.client.SellerServiceFeignClient;
 import com.jeontongju.auction.domain.Auction;
-import com.jeontongju.auction.domain.AuctionProduct;
-import com.jeontongju.auction.dto.request.AuctionProductRegistRequestDto;
+import com.jeontongju.auction.dto.request.AuctionProductRegisterRequestDto;
+import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
@@ -11,7 +11,6 @@ import com.jeontongju.auction.dto.response.AuctionProductResponseDto;
 import com.jeontongju.auction.dto.response.AuctionResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
-import com.jeontongju.auction.dto.temp.FeignFormat;
 import com.jeontongju.auction.dto.temp.SellerInfoForAuctionDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
@@ -140,7 +139,7 @@ public class AuctionService {
   }
 
   @Transactional
-  public void registAuctionProduct(AuctionProductRegistRequestDto request, Long sellerId) {
+  public void registerAuctionProduct(AuctionProductRegisterRequestDto request, Long sellerId) {
     Auction auction = auctionRepository.findById(request.getAuctionId())
         .orElseThrow(AuctionNotFoundException::new);
 
@@ -158,5 +157,10 @@ public class AuctionService {
         sellerId).getData();
 
     auctionProductRepository.save(request.toEntity(auction, sellerInfo, sellerId));
+  }
+
+  @Transactional
+  public void registerAuction(AuctionRegisterRequestDto request) {
+    auctionRepository.save(request.toEntity());
   }
 }
