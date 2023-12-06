@@ -150,7 +150,7 @@ public class AuctionController {
                 .build()
         );
   }
-  
+
   @DeleteMapping("/{auctionId}")
   public ResponseEntity<ResponseFormat<Void>> deleteAuction(
       @PathVariable String auctionId
@@ -161,7 +161,7 @@ public class AuctionController {
             ResponseFormat.<Void>builder()
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
-                .detail("경매 삭제 성공")   
+                .detail("경매 삭제 성공")
                 .build()
         );
   }
@@ -177,6 +177,26 @@ public class AuctionController {
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 수정 성공")
+                .build()
+        );
+  }
+
+  @PatchMapping("/confirm/product/{auctionProductId}/confirm/{confirm}")
+  public ResponseEntity<ResponseFormat<Void>> approveAuctionProduct(
+      @PathVariable String auctionProductId, @PathVariable Boolean confirm
+  ) {
+    auctionService.approveAuctionProduct(auctionProductId, confirm);
+    String message = "경매 물품 승인 성공";
+    if (!confirm) {
+      message = "경매 물품 반려 성공";
+    }
+
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail(message)
                 .build()
         );
   }

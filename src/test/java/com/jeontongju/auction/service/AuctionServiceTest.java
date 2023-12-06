@@ -200,6 +200,19 @@ public class AuctionServiceTest {
         .build();
   }
 
+  @Test
+  @DisplayName("경매 물품 승인")
+  void approveAuctionProduct() {
+    initProductList = initAuctionProduct(initAuction);
+    auctionProductRepository.saveAll(initProductList);
+
+    auctionService.approveAuctionProduct(initProductList.get(0).getAuctionProductId(), true);
+    auctionService.approveAuctionProduct(initProductList.get(1).getAuctionProductId(), false);
+
+    assertEquals(initProductList.get(0).getStatus(), AuctionProductStatusEnum.ALLOW);
+    assertEquals(initProductList.get(1).getStatus(), AuctionProductStatusEnum.DENY);
+  }
+
   private List<AuctionProduct> initAuctionProduct(Auction auction) {
     List<AuctionProduct> list = new ArrayList<>();
 
