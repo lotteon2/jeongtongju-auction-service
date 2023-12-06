@@ -1,5 +1,6 @@
 package com.jeontongju.auction.controller;
 
+import com.jeontongju.auction.dto.request.AuctionProductRegistRequestDto;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
@@ -7,6 +8,7 @@ import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.dto.temp.ResponseFormat;
 import com.jeontongju.auction.enums.temp.MemberRoleEnum;
 import com.jeontongju.auction.service.AuctionService;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -80,8 +84,12 @@ public class AuctionController {
     AuctionDetailResponseDto adminAuctionDetail = auctionService.getAdminAuctionDetail(auctionId);
     String message = "진행 예정 경매 조회 성공";
     switch (adminAuctionDetail.getAuction().getStatus()) {
-      case ING: message = "진행 중 경매 조회 성공"; break;
-      case AFTER: message = "진행 완료 경매 조회 성공"; break;
+      case ING:
+        message = "진행 중 경매 조회 성공";
+        break;
+      case AFTER:
+        message = "진행 완료 경매 조회 성공";
+        break;
     }
 
     return ResponseEntity.ok()
@@ -105,6 +113,21 @@ public class AuctionController {
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 조회 성공")
                 .data(auctionService.getThisAuctionDetail())
+                .build()
+        );
+  }
+
+  @PostMapping("/product")
+  public ResponseEntity<ResponseFormat<Void>> registAuctionProduct(
+      @Valid @RequestBody AuctionProductRegistRequestDto request,
+      @RequestHeader Long memberId) {
+    auctionService.registAuctionProduct(request, memberId);
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 물품 등록 성공")
                 .build()
         );
   }

@@ -1,6 +1,9 @@
 package com.jeontongju.auction.service;
 
+import com.jeontongju.auction.client.SellerServiceFeignClient;
 import com.jeontongju.auction.domain.Auction;
+import com.jeontongju.auction.domain.AuctionProduct;
+import com.jeontongju.auction.dto.request.AuctionProductRegistRequestDto;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
@@ -8,8 +11,12 @@ import com.jeontongju.auction.dto.response.AuctionProductResponseDto;
 import com.jeontongju.auction.dto.response.AuctionResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
+import com.jeontongju.auction.dto.temp.FeignFormat;
+import com.jeontongju.auction.dto.temp.SellerInfoForAuctionDto;
+import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
+import com.jeontongju.auction.exception.OverParticipationException;
 import com.jeontongju.auction.repository.AuctionProductRepository;
 import com.jeontongju.auction.repository.AuctionRepository;
 import java.util.List;
@@ -29,6 +36,8 @@ public class AuctionService {
 
   private final AuctionRepository auctionRepository;
   private final AuctionProductRepository auctionProductRepository;
+  private final SellerServiceFeignClient sellerServiceFeignClient;
+  private static final Long LIMIT_PARTICIPANTS = 5L;
 
   /**
    * 셀러 - 등록 가능한 경매 조회
@@ -108,11 +117,12 @@ public class AuctionService {
 
   /**
    * 소비자 - 이번 주 경매 조회 상세
-   * 
+   *
    * @return AuctionDetailResponseDto
    */
   public AuctionDetailResponseDto getThisAuctionDetail() {
-    Auction auction = auctionRepository.findThisAuction().orElseThrow(AuctionNotFoundException::new);
+    Auction auction = auctionRepository.findThisAuction()
+        .orElseThrow(AuctionNotFoundException::new);
     List<AuctionProductResponseDto> productResponseDtoList =
         Objects.isNull(auction.getAuctionProductList()) ? null :
             auction.getAuctionProductList()
@@ -129,4 +139,24 @@ public class AuctionService {
         .build();
   }
 
+  @Transactional
+  public void registAuctionProduct(AuctionProductRegistRequestDto request, Long sellerId) {
+    Auction auction = auctionRepository.findById(request.getAuctionId())
+        .orElseThrow(AuctionNotFoundException::new);
+
+    long participants =
+        auction.getAuctionProductList() == null ? 0L
+            : auction.getAuctionProductList().stream()
+                .filter(auctionProduct -> auctionProduct.getStatus().equals(
+                    AuctionProductStatusEnum.ALLOW)).count();
+
+    if (participants > LIMIT_PARTICIPANTS) {
+      throw new OverParticipationException();
+    }
+
+    SellerInfoForAuctionDto sellerInfo = sellerServiceFeignClient.getSellerInfoForCreateAuctionProduct(
+        sellerId).getData();
+
+    auctionProductRepository.save(request.toEntity(auction, sellerInfo, sellerId));
+  }
 }

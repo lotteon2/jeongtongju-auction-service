@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
+import com.jeontongju.auction.dto.request.AuctionProductRegistRequestDto;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
@@ -15,9 +16,11 @@ import com.jeontongju.auction.dto.response.AuctionProductResponseDto;
 import com.jeontongju.auction.dto.response.AuctionResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
+import com.jeontongju.auction.dto.temp.SellerInfoForAuctionDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
+import com.jeontongju.auction.exception.AuctionProductNotFoundException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -271,6 +274,36 @@ public class AuctionRepositoryTest {
 
     assertEquals(auction.getTitle(), "제 20회 복순도가 경매대회");
   }
+
+  @Test
+  @Order(10)
+  @DisplayName("경매 물품 등록 성공")
+  void registAuctionProduct() {
+    AuctionProductRegistRequestDto request = AuctionProductRegistRequestDto.builder()
+        .auctionId(initAuction.getAuctionId())
+        .auctionProductName("복순복순복순도가")
+        .startingPrice(10000L)
+        .thumbnailImageUrl("thumbnail_img")
+        .description("복순도가 맛있다")
+        .capacity(500L)
+        .alcoholDegree(17.0)
+        .build();
+
+    SellerInfoForAuctionDto sellerInfo = SellerInfoForAuctionDto.builder()
+        .storeName("덤보네")
+        .storeImageUrl("store_img")
+        .storeEmail("email@gmail.com")
+        .storePhoneNumber("010-0101-0101")
+        .businessmanName("김덤보")
+        .build();
+
+    auctionProductRepository.save(request.toEntity(initAuction, sellerInfo, 1L));
+    AuctionProduct auctionProduct = auctionProductRepository.findByName("복순복순복순도가")
+        .orElseThrow(AuctionProductNotFoundException::new);
+
+    assertEquals(auctionProduct.getDescription(), "복순도가 맛있다");
+  }
+
 
   private Auction initAuction(String title, AuctionStatusEnum auctionStatusEnum) {
     return Auction.builder()
