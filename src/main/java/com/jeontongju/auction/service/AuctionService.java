@@ -2,6 +2,7 @@ package com.jeontongju.auction.service;
 
 import com.jeontongju.auction.client.SellerServiceFeignClient;
 import com.jeontongju.auction.domain.Auction;
+import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.dto.request.AuctionModifyRequestDto;
 import com.jeontongju.auction.dto.request.AuctionProductRegisterRequestDto;
 import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
@@ -16,6 +17,7 @@ import com.jeontongju.auction.dto.temp.SellerInfoForAuctionDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
+import com.jeontongju.auction.exception.AuctionProductNotFoundException;
 import com.jeontongju.auction.exception.OverParticipationException;
 import com.jeontongju.auction.repository.AuctionProductRepository;
 import com.jeontongju.auction.repository.AuctionRepository;
@@ -169,15 +171,27 @@ public class AuctionService {
   public void deleteAuction(String auctionId) {
     Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
-    
+
     auctionRepository.save(auction.toBuilder().isDeleted(true).build());
   }
-  
+
   @Transactional
   public void modifyAuction(AuctionModifyRequestDto request, String auctionId) {
     Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
 
     auctionRepository.save(request.toEntity(auction));
+  }
+
+  @Transactional
+  public void approveAuctionProduct(String auctionProductId, Boolean confirm) {
+    AuctionProduct auctionProduct = auctionProductRepository.findById(auctionProductId).orElseThrow(
+        AuctionProductNotFoundException::new);
+
+    AuctionProductStatusEnum status = confirm
+        ? AuctionProductStatusEnum.ALLOW
+        : AuctionProductStatusEnum.DENY;
+
+    auctionProductRepository.save(auctionProduct.toBuilder().status(status).build());
   }
 }
