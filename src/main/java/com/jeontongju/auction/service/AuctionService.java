@@ -2,6 +2,7 @@ package com.jeontongju.auction.service;
 
 import com.jeontongju.auction.client.SellerServiceFeignClient;
 import com.jeontongju.auction.domain.Auction;
+import com.jeontongju.auction.dto.request.AuctionModifyRequestDto;
 import com.jeontongju.auction.dto.request.AuctionProductRegisterRequestDto;
 import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
@@ -162,5 +163,13 @@ public class AuctionService {
   @Transactional
   public void registerAuction(AuctionRegisterRequestDto request) {
     auctionRepository.save(request.toEntity());
+  }
+
+  @Transactional
+  public void modifyAuction(AuctionModifyRequestDto request, String auctionId) {
+    Auction auction = auctionRepository.findById(auctionId)
+        .orElseThrow(AuctionNotFoundException::new);
+
+    auctionRepository.save(request.toEntity(auction));
   }
 }

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
+import com.jeontongju.auction.dto.request.AuctionModifyRequestDto;
 import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
@@ -174,6 +175,19 @@ public class AuctionServiceTest {
 
     assertEquals(result.getDescription(), "경매 생성 테스트");
 
+  }
+
+  @Test
+  @DisplayName("경매 수정")
+  void modifyAuction() {
+    AuctionModifyRequestDto request = AuctionModifyRequestDto.builder()
+        .title("제 31회 경매")
+        .build();
+
+    auctionService.modifyAuction(request, initAuction.getAuctionId());
+
+    assertEquals(initAuction.getTitle(), "제 31회 경매");
+    assertEquals(initAuction.getDescription(), "복순도가 누가 가져갈 것 인가");
   }
 
   private Auction initAuction(String title, AuctionStatusEnum auctionStatusEnum) {
