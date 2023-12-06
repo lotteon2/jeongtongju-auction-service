@@ -1,5 +1,6 @@
 package com.jeontongju.auction.controller;
 
+import com.jeontongju.auction.dto.request.AuctionModifyRequestDto;
 import com.jeontongju.auction.dto.request.AuctionProductRegisterRequestDto;
 import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
@@ -18,6 +19,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,8 +51,8 @@ public class AuctionController {
   @GetMapping("/detail/seller")
   public ResponseEntity<ResponseFormat<Page<SellerAuctionEntriesResponseDto>>> getAuctionEntries(
       @RequestHeader Long memberId, @RequestHeader MemberRoleEnum memberRole,
-      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable) {
-
+      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable
+  ) {
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Page<SellerAuctionEntriesResponseDto>>builder()
@@ -65,8 +67,8 @@ public class AuctionController {
   @GetMapping("/admin")
   public ResponseEntity<ResponseFormat<Page<AdminAuctionResponseDto>>> getAdminAuction(
       @RequestHeader MemberRoleEnum memberRole,
-      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable) {
-
+      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable
+  ) {
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Page<AdminAuctionResponseDto>>builder()
@@ -80,7 +82,8 @@ public class AuctionController {
 
   @GetMapping("/admin/detail/{auctionId}")
   public ResponseEntity<ResponseFormat<AuctionDetailResponseDto>> getAdminAuctionDetail(
-      @RequestHeader MemberRoleEnum memberRole, @PathVariable String auctionId) {
+      @RequestHeader MemberRoleEnum memberRole, @PathVariable String auctionId
+  ) {
     AuctionDetailResponseDto adminAuctionDetail = auctionService.getAdminAuctionDetail(auctionId);
     String message = "진행 예정 경매 조회 성공";
     switch (adminAuctionDetail.getAuction().getStatus()) {
@@ -143,6 +146,21 @@ public class AuctionController {
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 생성 성공")
+                .build()
+        );
+  }
+
+  @PatchMapping("/{auctionId}")
+  public ResponseEntity<ResponseFormat<Void>> modifyAuction(
+      @PathVariable String auctionId, @RequestBody AuctionModifyRequestDto request
+  ) {
+    auctionService.modifyAuction(request, auctionId);
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 수정 성공")
                 .build()
         );
   }
