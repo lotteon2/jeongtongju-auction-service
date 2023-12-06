@@ -166,6 +166,14 @@ public class AuctionService {
   }
 
   @Transactional
+  public void deleteAuction(String auctionId) {
+    Auction auction = auctionRepository.findById(auctionId)
+        .orElseThrow(AuctionNotFoundException::new);
+    
+    auctionRepository.save(auction.toBuilder().isDeleted(true).build());
+  }
+  
+  @Transactional
   public void modifyAuction(AuctionModifyRequestDto request, String auctionId) {
     Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
