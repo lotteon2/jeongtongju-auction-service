@@ -5,6 +5,7 @@ import com.jeontongju.auction.dto.request.AuctionProductRegisterRequestDto;
 import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
+import com.jeontongju.auction.dto.response.ConsumerAuctionBidResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.dto.temp.ResponseFormat;
@@ -197,6 +198,40 @@ public class AuctionController {
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail(message)
+                .build()
+        );
+  }
+
+  @GetMapping("/bid/consumer")
+  public ResponseEntity<ResponseFormat<Page<ConsumerAuctionBidResponseDto>>> getConsumerBidInfo(
+      @RequestHeader Long memberId,
+      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable
+  ) {
+
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Page<ConsumerAuctionBidResponseDto>>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("입찰 정보 조회 성공")
+                .data(auctionService.getConsumerBidInfo(memberId, pageable))
+                .build()
+        );
+  }
+
+  @GetMapping("/bid/consumer/{consumerId}")
+  public ResponseEntity<ResponseFormat<Page<ConsumerAuctionBidResponseDto>>> getAdminConsumerBidInfo(
+      @PathVariable Long consumerId,
+      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable
+  ) {
+
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Page<ConsumerAuctionBidResponseDto>>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("입찰 정보 조회 성공")
+                .data(auctionService.getConsumerBidInfo(consumerId, pageable))
                 .build()
         );
   }

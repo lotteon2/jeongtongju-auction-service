@@ -3,6 +3,7 @@ package com.jeontongju.auction.service;
 import com.jeontongju.auction.client.SellerServiceFeignClient;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
+import com.jeontongju.auction.domain.BidInfo;
 import com.jeontongju.auction.dto.request.AuctionModifyRequestDto;
 import com.jeontongju.auction.dto.request.AuctionProductRegisterRequestDto;
 import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
@@ -11,6 +12,7 @@ import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductResponseDto;
 import com.jeontongju.auction.dto.response.AuctionResponseDto;
+import com.jeontongju.auction.dto.response.ConsumerAuctionBidResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.dto.temp.SellerInfoForAuctionDto;
@@ -21,12 +23,18 @@ import com.jeontongju.auction.exception.AuctionProductNotFoundException;
 import com.jeontongju.auction.exception.OverParticipationException;
 import com.jeontongju.auction.repository.AuctionProductRepository;
 import com.jeontongju.auction.repository.AuctionRepository;
+import com.jeontongju.auction.repository.BidInfoRepository;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +46,7 @@ public class AuctionService {
 
   private final AuctionRepository auctionRepository;
   private final AuctionProductRepository auctionProductRepository;
+  private final BidInfoRepository bidInfoRepository;
   private final SellerServiceFeignClient sellerServiceFeignClient;
   private static final Long LIMIT_PARTICIPANTS = 5L;
 
@@ -125,20 +134,8 @@ public class AuctionService {
   public AuctionDetailResponseDto getThisAuctionDetail() {
     Auction auction = auctionRepository.findThisAuction()
         .orElseThrow(AuctionNotFoundException::new);
-    List<AuctionProductResponseDto> productResponseDtoList =
-        Objects.isNull(auction.getAuctionProductList()) ? null :
-            auction.getAuctionProductList()
-                .stream()
-                .map(AuctionProductResponseDto::new)
-                .collect(Collectors.toList());
 
-    return AuctionDetailResponseDto.builder()
-        .auction(
-            Optional.of(auction).map(AuctionResponseDto::new)
-                .orElseThrow(AuctionNotFoundException::new)
-        )
-        .productList(productResponseDtoList)
-        .build();
+    return AuctionDetailResponseDto.of(auction);
   }
 
   @Transactional
@@ -156,6 +153,7 @@ public class AuctionService {
       throw new OverParticipationException();
     }
 
+    // TODO : circuit break
     SellerInfoForAuctionDto sellerInfo = sellerServiceFeignClient.getSellerInfoForCreateAuctionProduct(
         sellerId).getData();
 
@@ -193,5 +191,39 @@ public class AuctionService {
         : AuctionProductStatusEnum.DENY;
 
     auctionProductRepository.save(auctionProduct.toBuilder().status(status).build());
+  }
+
+  public Page<ConsumerAuctionBidResponseDto> getConsumerBidInfo(Long consumerId, Pageable pageable) {
+    Map<String, Long> lastBidMap = bidInfoRepository.findAllByIsBidTrue().stream()
+        .collect(Collectors.toMap(bidInfo -> bidInfo.getAuctionProduct().getName(),
+            BidInfo::getBidPrice));
+
+    List<ConsumerAuctionBidResponseDto> result = bidInfoRepository.findByConsumerId(consumerId)
+        .stream()
+        .collect(
+            Collectors.toMap(
+                BidInfo::getAuctionProduct,
+                Function.identity(),
+                BinaryOperator.maxBy(Comparator.comparing(BidInfo::getBidPrice))
+            )
+        )
+        .values()
+        .stream()
+        .map(ConsumerAuctionBidResponseDto::new)
+        .peek(dto -> dto.initLastBidPrice(lastBidMap.get(dto.getProductName())))
+        .collect(Collectors.toList()
+        );
+
+      return toPage(result, pageable);
+  }
+
+
+  <T> Page<T> toPage(List<T> list, Pageable pageable) {
+    List<T> pageList = list.stream()
+        .skip((long) pageable.getPageNumber() * pageable.getPageSize())
+        .limit(pageable.getPageSize())
+        .collect(Collectors.toList());
+
+    return new PageImpl<>(pageList, pageable, pageList.size());
   }
 }

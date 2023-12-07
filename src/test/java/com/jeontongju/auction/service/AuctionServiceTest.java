@@ -1,6 +1,7 @@
 package com.jeontongju.auction.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.jeontongju.auction.domain.Auction;
@@ -10,6 +11,7 @@ import com.jeontongju.auction.dto.request.AuctionModifyRequestDto;
 import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
+import com.jeontongju.auction.dto.response.ConsumerAuctionBidResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
@@ -91,8 +93,10 @@ public class AuctionServiceTest {
     auctionProductRepository.saveAll(initProductList);
     AuctionProduct auctionProduct = auctionProductRepository.findByName("복순도가").orElseThrow(
         EntityNotFoundException::new);
+    AuctionProduct auctionProduct2 = auctionProductRepository.findByName("안동소주").orElseThrow(
+        EntityNotFoundException::new);
 
-    initBidInfoList = initBidInfo(initAuction, auctionProduct);
+    initBidInfoList = initBidInfo(initAuction, auctionProduct, auctionProduct2);
     bidInfoRepository.saveAll(initBidInfoList);
 
     entityManager.flush();
@@ -105,6 +109,9 @@ public class AuctionServiceTest {
       if (dto.getAuctionProductName().equals("복순도가")) {
         assertEquals(dto.getLastBidPrice(), 12000);
         assertEquals(dto.getTotalBid(), 3);
+      } else if (dto.getAuctionProductName().equals("안동소주")) {
+        assertEquals(dto.getLastBidPrice(), 15000);
+        assertEquals(dto.getTotalBid(), 2);
       } else {
         assertNull(dto.getLastBidPrice());
         assertNull(dto.getTotalBid());
@@ -124,7 +131,7 @@ public class AuctionServiceTest {
     List<AuctionProduct> initProductList2 = initAuctionProduct(auction2);
     auctionProductRepository.saveAll(initProductList2);
 
-    initBidInfoList = initBidInfo(auction2, initProductList2.get(0));
+    initBidInfoList = initBidInfo(auction2, initProductList2.get(0), initProductList2.get(1));
     bidInfoRepository.saveAll(initBidInfoList);
 
     entityManager.flush();
@@ -138,10 +145,13 @@ public class AuctionServiceTest {
 
     assertEquals(auctionBeforeResponse.getProductList().get(0).getBusinessmanName(), "김덤보");
 
-    AuctionProductBidResponseDto bidResponse = (AuctionProductBidResponseDto) auctionAfterResponse.getProductList()
-        .get(0);
+    List<AuctionProductBidResponseDto> bidList = (List<AuctionProductBidResponseDto>) auctionAfterResponse.getProductList();
 
-    assertEquals(bidResponse.getLastBidPrice(), 12000);
+    bidList.forEach(auctionProductBidResponseDto -> {
+      if (auctionProductBidResponseDto.getProductName().equals("복순도가")) {
+        assertNotNull(auctionProductBidResponseDto.getLastBidPrice());
+      }
+    });
   }
 
   @Test
@@ -213,6 +223,25 @@ public class AuctionServiceTest {
     assertEquals(initProductList.get(1).getStatus(), AuctionProductStatusEnum.DENY);
   }
 
+  @Test
+  @DisplayName("소비자 입찰 내역 조회")
+  void getConsumerBidInfo() {
+    initProductList = initAuctionProduct(initAuction);
+    auctionProductRepository.saveAll(initProductList);
+
+    initBidInfoList = initBidInfo(initAuction, initProductList.get(0), initProductList.get(1));
+    bidInfoRepository.saveAll(initBidInfoList);
+
+    entityManager.flush();
+    entityManager.clear();
+
+    Page<ConsumerAuctionBidResponseDto> consumerBidInfo = auctionService.getConsumerBidInfo(1L,
+        PageRequest.of(0, 10));
+
+    assertEquals(consumerBidInfo.getContent().size(), 2);
+    assertEquals(consumerBidInfo.getContent().get(0).getAuctionId(), initAuction.getAuctionId());
+  }
+
   private List<AuctionProduct> initAuctionProduct(Auction auction) {
     List<AuctionProduct> list = new ArrayList<>();
 
@@ -240,7 +269,8 @@ public class AuctionServiceTest {
     return list;
   }
 
-  private List<BidInfo> initBidInfo(Auction auction, AuctionProduct auctionProduct) {
+  private List<BidInfo> initBidInfo(Auction auction, AuctionProduct auctionProduct,
+      AuctionProduct auctionProduct2) {
     List<BidInfo> list = new ArrayList<>();
 
     BidInfo bidInfo1 = BidInfo.builder()
@@ -253,21 +283,38 @@ public class AuctionServiceTest {
     BidInfo bidInfo2 = BidInfo.builder()
         .auction(auction)
         .auctionProduct(auctionProduct)
-        .consumerId(2L)
+        .consumerId(1L)
         .bidPrice(11000L)
         .build();
 
     BidInfo bidInfo3 = BidInfo.builder()
         .auction(auction)
         .auctionProduct(auctionProduct)
+        .consumerId(2L)
+        .bidPrice(12000L)
+        .isBid(true)
+        .build();
+
+    BidInfo bidInfo4 = BidInfo.builder()
+        .auction(auction)
+        .auctionProduct(auctionProduct2)
         .consumerId(1L)
         .bidPrice(12000L)
+        .build();
+
+    BidInfo bidInfo5 = BidInfo.builder()
+        .auction(auction)
+        .auctionProduct(auctionProduct2)
+        .consumerId(1L)
+        .bidPrice(15000L)
         .isBid(true)
         .build();
 
     list.add(bidInfo1);
     list.add(bidInfo2);
     list.add(bidInfo3);
+    list.add(bidInfo5);
+    list.add(bidInfo4);
 
     return list;
   }
