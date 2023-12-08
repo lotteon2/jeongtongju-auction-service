@@ -53,7 +53,7 @@ public class AuctionController {
   @GetMapping("/detail/seller")
   public ResponseEntity<ResponseFormat<Page<SellerAuctionEntriesResponseDto>>> getAuctionEntries(
       @RequestHeader Long memberId, @RequestHeader MemberRoleEnum memberRole,
-      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable
+      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
   ) {
     return ResponseEntity.ok()
         .body(
@@ -69,7 +69,7 @@ public class AuctionController {
   @GetMapping("/admin")
   public ResponseEntity<ResponseFormat<Page<AdminAuctionResponseDto>>> getAdminAuction(
       @RequestHeader MemberRoleEnum memberRole,
-      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable
+      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
   ) {
     return ResponseEntity.ok()
         .body(
@@ -205,7 +205,7 @@ public class AuctionController {
   @GetMapping("/bid/consumer")
   public ResponseEntity<ResponseFormat<Page<ConsumerAuctionBidResponseDto>>> getConsumerBidInfo(
       @RequestHeader Long memberId,
-      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable
+      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
   ) {
 
     return ResponseEntity.ok()
@@ -222,7 +222,7 @@ public class AuctionController {
   @GetMapping("/bid/consumer/{consumerId}")
   public ResponseEntity<ResponseFormat<Page<ConsumerAuctionBidResponseDto>>> getAdminConsumerBidInfo(
       @PathVariable Long consumerId,
-      @PageableDefault(size = 10, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable
+      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
   ) {
 
     return ResponseEntity.ok()
