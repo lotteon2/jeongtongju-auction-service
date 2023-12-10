@@ -1,5 +1,7 @@
 package com.jeontongju.auction.dto.request;
 
+import com.jeontongju.auction.domain.BidInfoHistory;
+import com.jeontongju.auction.vo.BidInfoHistoryId;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,4 +15,17 @@ public class  AuctionBidRequestDto {
   private String auctionId;
   private String auctionProductId;
   private Long bidPrice;
+
+  public BidInfoHistory to(Long consumerId) {
+    return BidInfoHistory.builder()
+        .bidInfoHistoryId(
+            BidInfoHistoryId.builder()
+                .auctionProductId(auctionProductId)
+                .bidPrice(bidPrice)
+                .build()
+        )
+        .auctionId(auctionId)
+        .consumerId(consumerId)
+        .build();
+  }
 }

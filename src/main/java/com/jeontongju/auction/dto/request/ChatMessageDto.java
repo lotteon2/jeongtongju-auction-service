@@ -7,7 +7,5 @@ import lombok.Getter;
 @Builder
 public class ChatMessageDto {
   private Long memberId;
-  private String memberNickname;
-  private String memberProfileImage;
   private String message;
 }

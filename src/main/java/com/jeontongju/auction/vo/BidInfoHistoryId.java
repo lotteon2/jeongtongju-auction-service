@@ -36,4 +36,11 @@ public class BidInfoHistoryId implements Serializable {
   public void setBidPrice(Long bidPrice) {
     this.bidPrice = bidPrice;
   }
+
+  public static BidInfoHistoryId of(String auctionProductId, Long bidPrice) {
+    return BidInfoHistoryId.builder()
+        .auctionProductId(auctionProductId)
+        .bidPrice(bidPrice)
+        .build();
+  }
 }

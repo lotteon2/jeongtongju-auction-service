@@ -3,7 +3,9 @@ package com.jeontongju.auction.exception.advice;
 import com.jeontongju.auction.dto.temp.ResponseFormat;
 import com.jeontongju.auction.enums.ResponseEnum;
 import com.jeontongju.auction.exception.AuctionInvalidStatusException;
+import com.jeontongju.auction.exception.ConsumerInvalidCreditException;
 import com.jeontongju.auction.exception.OverParticipationException;
+import com.jeontongju.auction.exception.SameBidPriceException;
 import com.jeontongju.auction.exception.common.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -109,6 +111,38 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
   @ExceptionHandler(AuctionInvalidStatusException.class)
   public ResponseEntity<ResponseFormat<Void>> handleAuctionInvalidStatusException(
       AuctionInvalidStatusException e
+  ) {
+    HttpStatus status = HttpStatus.BAD_REQUEST;
+    return ResponseEntity
+        .status(status)
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(status.value())
+                .message(status.name())
+                .detail(e.getMessage())
+                .build()
+        );
+  }
+
+  @ExceptionHandler(ConsumerInvalidCreditException.class)
+  public ResponseEntity<ResponseFormat<Void>> handleConsumerInvalidCreditException(
+      ConsumerInvalidCreditException e
+  ) {
+    HttpStatus status = HttpStatus.BAD_REQUEST;
+    return ResponseEntity
+        .status(status)
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(status.value())
+                .message(status.name())
+                .detail(e.getMessage())
+                .build()
+        );
+  }
+
+  @ExceptionHandler(SameBidPriceException.class)
+  public ResponseEntity<ResponseFormat<Void>> handleSameBidPriceException(
+      SameBidPriceException e
   ) {
     HttpStatus status = HttpStatus.BAD_REQUEST;
     return ResponseEntity

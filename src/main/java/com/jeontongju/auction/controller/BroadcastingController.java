@@ -47,10 +47,9 @@ public class BroadcastingController {
    */
   @PostMapping("/api/auction/bid")
   public ResponseEntity<ResponseFormat<Void>> bidProduct(
-      @RequestHeader String memberId,
+      @RequestHeader Long memberId,
       @RequestBody AuctionBidRequestDto auctionBidRequestDto) {
-    broadcastingService.sendBidInfoToKafka(auctionBidRequestDto, Long.parseLong(memberId));
-
+    broadcastingService.bidProduct(auctionBidRequestDto, memberId);
     return ResponseEntity.ok().body(
         ResponseFormat.<Void>builder()
             .code(HttpStatus.OK.value())
