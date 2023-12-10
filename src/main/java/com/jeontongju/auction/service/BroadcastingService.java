@@ -10,9 +10,9 @@ import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.request.ChatMessageDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
-import com.jeontongju.auction.exception.AuctionInvalidStatusException;
+import com.jeontongju.auction.exception.InvalidAuctionStatusException;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
-import com.jeontongju.auction.exception.ConsumerInvalidCreditException;
+import com.jeontongju.auction.exception.InvalidConsumerCreditException;
 import com.jeontongju.auction.exception.SameBidPriceException;
 import com.jeontongju.auction.repository.AuctionRepository;
 import com.jeontongju.auction.repository.BidInfoHistoryRepository;
@@ -56,9 +56,9 @@ public class BroadcastingService {
 
     AuctionStatusEnum status = auction.getStatus();
     if (status.equals(AuctionStatusEnum.ING)) {
-      throw new AuctionInvalidStatusException("이미 진행 중인 경매입니다.");
+      throw new InvalidAuctionStatusException("이미 진행 중인 경매입니다.");
     } else if (status.equals(AuctionStatusEnum.AFTER)) {
-      throw new AuctionInvalidStatusException("이미 완료된 경매입니다.");
+      throw new InvalidAuctionStatusException("이미 완료된 경매입니다.");
     }
 
     auctionRepository.save(auction.toBuilder().status(AuctionStatusEnum.ING).build());
@@ -70,9 +70,9 @@ public class BroadcastingService {
 
     AuctionStatusEnum status = auction.getStatus();
     if (status.equals(AuctionStatusEnum.BEFORE)) {
-      throw new AuctionInvalidStatusException("경매가 시작하지 않았습니다.");
+      throw new InvalidAuctionStatusException("경매가 시작하지 않았습니다.");
     } else if (status.equals(AuctionStatusEnum.AFTER)) {
-      throw new AuctionInvalidStatusException("이미 완료된 경매입니다.");
+      throw new InvalidAuctionStatusException("이미 완료된 경매입니다.");
     }
 
     auctionRepository.save(auction.toBuilder().status(AuctionStatusEnum.AFTER).build());
@@ -85,7 +85,7 @@ public class BroadcastingService {
     Long memberCredit = memberDto.getCredit();
 
     if (memberCredit == null || memberCredit < auctionBidRequestDto.getBidPrice()) {
-      throw new ConsumerInvalidCreditException();
+      throw new InvalidConsumerCreditException();
     }
 
     // 2. 동일 상품 + 동일 입찰가 데이터 검사
@@ -121,6 +121,11 @@ public class BroadcastingService {
     memberRedis.set(consumerId.toString(), memberDto);
 
     return AuctionBroadcastResponseDto.of(auction);
+  }
+
+  public void modifyAskingPrice(String auctionProductId, Long askingPrice) {
+    ValueOperations<String, Long> askingPriceRedis = redisTemplate.opsForValue();
+    askingPriceRedis.set("asking_price_" + auctionProductId, askingPrice);
   }
 
   public void sendMessageToKafka(ChatMessageDto message, String auctionId) {

@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AuctionBroadcastResponseDto {
   private String auctionId;
-  private List<AuctionProductResponseDtoForBroadcast> auctionProductList;
+  private List<BroadcastProductResponseDto> auctionProductList;
 
   public static AuctionBroadcastResponseDto of(Auction auction) {
     return AuctionBroadcastResponseDto.builder()
@@ -22,7 +22,7 @@ public class AuctionBroadcastResponseDto {
         .auctionProductList(
             auction.getAuctionProductList()
                 .stream()
-                .map(AuctionProductResponseDtoForBroadcast::new)
+                .map(BroadcastProductResponseDto::new)
                 .collect(Collectors.toList())
         )
         .build();

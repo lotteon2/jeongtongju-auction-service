@@ -104,4 +104,19 @@ public class BroadcastingController {
                 .build()
         );
   }
+
+  @PatchMapping("/api/auction/bid/{auctionProductId}/askingPrice/{askingPrice}")
+  public ResponseEntity<ResponseFormat<Void>> modifyAskingPrice(
+      @RequestHeader String auctionProductId, @RequestHeader Long askingPrice
+  ) {
+    broadcastingService.modifyAskingPrice(auctionProductId, askingPrice);
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 호가 수정 성공")
+                .build()
+        );
+  }
 }

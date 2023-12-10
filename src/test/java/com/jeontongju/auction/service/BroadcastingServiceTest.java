@@ -7,7 +7,7 @@ import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
-import com.jeontongju.auction.exception.AuctionInvalidStatusException;
+import com.jeontongju.auction.exception.InvalidAuctionStatusException;
 import com.jeontongju.auction.repository.AuctionProductRepository;
 import com.jeontongju.auction.repository.AuctionRepository;
 import com.jeontongju.auction.repository.BidInfoRepository;
@@ -67,7 +67,7 @@ public class BroadcastingServiceTest {
     assertEquals(initAuction.getStatus(), AuctionStatusEnum.ING);
 
     // 진행 중
-    assertThrows(AuctionInvalidStatusException.class, () ->
+    assertThrows(InvalidAuctionStatusException.class, () ->
         broadcastingService.startAuction(initAuction.getAuctionId())
     );
 
@@ -75,7 +75,7 @@ public class BroadcastingServiceTest {
     auctionRepository.save(afterAuction);
 
     // 완료
-    assertThrows(AuctionInvalidStatusException.class, () ->
+    assertThrows(InvalidAuctionStatusException.class, () ->
         broadcastingService.startAuction(initAuction.getAuctionId())
     );
   }
@@ -84,7 +84,7 @@ public class BroadcastingServiceTest {
   @DisplayName("경매 방송 종료")
   void endAuction() {
     // 시작 전
-    assertThrows(AuctionInvalidStatusException.class, () ->
+    assertThrows(InvalidAuctionStatusException.class, () ->
         broadcastingService.endAuction(initAuction.getAuctionId())
     );
 
@@ -96,7 +96,7 @@ public class BroadcastingServiceTest {
     assertEquals(initAuction.getStatus(), AuctionStatusEnum.AFTER);
 
     // 완료
-    assertThrows(AuctionInvalidStatusException.class, () ->
+    assertThrows(InvalidAuctionStatusException.class, () ->
         broadcastingService.endAuction(initAuction.getAuctionId())
     );
   }
