@@ -107,7 +107,7 @@ public class BroadcastingController {
 
   @PatchMapping("/api/auction/bid/{auctionProductId}/askingPrice/{askingPrice}")
   public ResponseEntity<ResponseFormat<Void>> modifyAskingPrice(
-      @RequestHeader String auctionProductId, @RequestHeader Long askingPrice
+      @PathVariable String auctionProductId, @PathVariable Long askingPrice
   ) {
     broadcastingService.modifyAskingPrice(auctionProductId, askingPrice);
     return ResponseEntity.ok()
