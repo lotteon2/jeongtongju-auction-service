@@ -1,7 +1,6 @@
 package com.jeontongju.auction.dto.kafka;
 
 import com.jeontongju.auction.dto.redis.AuctionBidHistoryDto;
-import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,14 +11,14 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class KafkaAuctionBidInfoDto {
+public class KafkaAuctionBidHistoryDto {
 
   private Long askingPrice;
   private List<AuctionBidHistoryDto> bidHistoryList;
 
-  public static KafkaAuctionBidInfoDto of(List<AuctionBidHistoryDto> bidHistoryList,
+  public static KafkaAuctionBidHistoryDto of(List<AuctionBidHistoryDto> bidHistoryList,
       Long askingPrice) {
-    return KafkaAuctionBidInfoDto.builder()
+    return KafkaAuctionBidHistoryDto.builder()
         .bidHistoryList(bidHistoryList)
         .askingPrice(askingPrice)
         .build();

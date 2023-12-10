@@ -1,12 +1,14 @@
 package com.jeontongju.auction.service;
 
+import com.jeontongju.auction.client.ConsumerServiceFeignClient;
 import com.jeontongju.auction.domain.Auction;
-import com.jeontongju.auction.dto.kafka.KafkaAuctionBidInfoDto;
+import com.jeontongju.auction.dto.kafka.KafkaAuctionBidHistoryDto;
 import com.jeontongju.auction.dto.kafka.KafkaChatMessageDto;
 import com.jeontongju.auction.dto.redis.AuctionBidHistoryDto;
 import com.jeontongju.auction.dto.redis.MemberDto;
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.request.ChatMessageDto;
+import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionInvalidStatusException;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
@@ -46,6 +48,8 @@ public class BroadcastingService {
   private static final String CHAT_TOPIC = "bid-chat-topic";
   private static final String BID_FIN_TOPIC = "bid-info-topic";
 
+  private final ConsumerServiceFeignClient client;
+
   public void startAuction(String auctionId) {
     Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
@@ -76,8 +80,9 @@ public class BroadcastingService {
 
   public void bidProduct(AuctionBidRequestDto auctionBidRequestDto, Long consumerId) {
     // 1. 크레딧 검사
-    ValueOperations<String, Long> creditRedis = redisTemplate.opsForValue();
-    Long memberCredit = creditRedis.get("member_credit_" + consumerId);
+    ValueOperations<String, MemberDto> memberRedis = redisTemplate.opsForValue();
+    MemberDto memberDto = memberRedis.get(consumerId);
+    Long memberCredit = memberDto.getCredit();
 
     if (memberCredit == null || memberCredit < auctionBidRequestDto.getBidPrice()) {
       throw new ConsumerInvalidCreditException();
@@ -98,7 +103,7 @@ public class BroadcastingService {
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisTemplate.opsForZSet();
 
     AuctionBidHistoryDto historyDto = AuctionBidHistoryDto
-        .of(consumerId, auctionProductId, bidPrice);
+        .of(memberDto, auctionProductId, bidPrice);
 
     bidHistoryRedis.add(auctionProductId, historyDto, bidPrice);
 
@@ -106,6 +111,17 @@ public class BroadcastingService {
     kafkaBidInfoTemplate.send(BID_FIN_TOPIC, auctionProductId);
   }
 
+  public AuctionBroadcastResponseDto enterAuction(Long consumerId, String auctionId) {
+    Auction auction = auctionRepository.findById(auctionId)
+        .orElseThrow(AuctionNotFoundException::new);
+
+    // TODO : Circuitbreaker
+    MemberDto memberDto = client.getConsumerInfo(consumerId).getData().to(consumerId);
+    ValueOperations<String, MemberDto> memberRedis = redisTemplate.opsForValue();
+    memberRedis.set(consumerId.toString(), memberDto);
+
+    return AuctionBroadcastResponseDto.of(auction);
+  }
 
   public void sendMessageToKafka(ChatMessageDto message, String auctionId) {
     ValueOperations<String, MemberDto> memberRedis = redisTemplate.opsForValue();
@@ -136,6 +152,6 @@ public class BroadcastingService {
     Long askingPrice = askingPriceRedis.get("asking_price_" + auctionProductId);
 
     // 입찰 내역, 호가 전달
-    template.convertAndSend("/sub/bid-info/" + KafkaAuctionBidInfoDto.of(list, askingPrice));
+    template.convertAndSend("/sub/bid-info/" + KafkaAuctionBidHistoryDto.of(list, askingPrice));
   }
 }

@@ -1,22 +1,22 @@
 package com.jeontongju.auction.dto.redis;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Getter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuctionBidHistoryDto {
-  private Long memberId;
+public class AuctionBidHistoryDto extends MemberDto {
   private String auctionProductId;
   private Long bidPrice;
 
-  public static AuctionBidHistoryDto of(Long memberId, String auctionProductId, Long bidPrice) {
+  public static AuctionBidHistoryDto of(MemberDto memberDto, String auctionProductId, Long bidPrice) {
     return AuctionBidHistoryDto.builder()
-        .memberId(memberId)
+        .memberId(memberDto.getMemberId())
+        .profileImage(memberDto.getProfileImage())
         .auctionProductId(auctionProductId)
         .bidPrice(bidPrice)
         .build();
