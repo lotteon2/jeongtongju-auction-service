@@ -119,4 +119,17 @@ public class BroadcastingController {
                 .build()
         );
   }
+
+  @PostMapping("/api/auction/bid/{auctionProductId}")
+  public ResponseEntity<ResponseFormat<Void>> successfulBid(@PathVariable String auctionProductId) {
+    broadcastingService.successfulBid(auctionProductId);
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 낙찰 성공")
+                .build()
+        );
+  }
 }
