@@ -55,6 +55,10 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 
+	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE' // spring aws
+	implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.12.353' // aws 제공 dynamodb sdk
+	implementation 'io.github.boostchicken:spring-data-dynamodb:5.2.3' // dynamodb 편의성 제공
+
 	implementation "com.querydsl:querydsl-jpa:${queryDslVersion}"
 	implementation "com.querydsl:querydsl-apt:${queryDslVersion}"
 }

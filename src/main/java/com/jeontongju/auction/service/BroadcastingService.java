@@ -19,26 +19,23 @@ public class BroadcastingService {
   private final KafkaTemplate<String, KafkaChatMessageDto> kafkaChatTemplate;
   private final KafkaTemplate<String, KafkaAuctionBidInfoDto> kafkaBidInfoTemplate;
 
-  @Value("${chatTopic}")
-  private String chatTopic;
-
-  @Value("${bidInfoTopic}")
-  private String bidInfoTopic;
+  private static final String CHAT_TOPIC = "bid-chat-topic";
+  private static final String BID_INFO_TOPIC = "bid-info-topic";
 
   public void sendMessageToKafka(ChatMessageDto message, String auctionId) {
-    kafkaChatTemplate.send(chatTopic, KafkaChatMessageDto.toKafkaChatMessageDto(message, auctionId));
+    kafkaChatTemplate.send(CHAT_TOPIC, KafkaChatMessageDto.toKafkaChatMessageDto(message, auctionId));
   }
 
   public void sendBidInfoToKafka(AuctionBidRequestDto auctionBidRequestDto, Long memberId) {
-    kafkaBidInfoTemplate.send(bidInfoTopic, KafkaAuctionBidInfoDto.toKafkaAuctionBidInfoDto(auctionBidRequestDto, memberId));
+    kafkaBidInfoTemplate.send(BID_INFO_TOPIC, KafkaAuctionBidInfoDto.toKafkaAuctionBidInfoDto(auctionBidRequestDto, memberId));
   }
 
-  @KafkaListener(topics = "${chatTopic}")
+  @KafkaListener(topics = "CHAT_TOPIC")
   public void subMessage(KafkaChatMessageDto message) {
     template.convertAndSend("/sub/chat/" + message.getAuctionId(), message);
   }
 
-  @KafkaListener(topics = "${bidInfoTopic}")
+  @KafkaListener(topics = "BID_INFO_TOPIC")
   public void subBidInfo(KafkaAuctionBidInfoDto bidInfo) {
     template.convertAndSend("/sub/bid-info/" + bidInfo.getAuctionId(), bidInfo);
   }

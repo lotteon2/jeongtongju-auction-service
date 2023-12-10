@@ -9,12 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
+import com.jeontongju.auction.domain.BidInfoHistory;
 import com.jeontongju.auction.dto.request.AuctionProductRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AdminAuctionResponseDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
-import com.jeontongju.auction.dto.response.AuctionProductResponseDto;
-import com.jeontongju.auction.dto.response.AuctionResponseDto;
 import com.jeontongju.auction.dto.response.ConsumerAuctionBidResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
@@ -23,6 +22,7 @@ import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
 import com.jeontongju.auction.exception.AuctionProductNotFoundException;
+import com.jeontongju.auction.vo.BidInfoHistoryId;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,8 +32,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -49,9 +47,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,6 +66,9 @@ public class AuctionRepositoryTest {
 
   @Autowired
   private BidInfoRepository bidInfoRepository;
+
+  @Autowired
+  private BidInfoHistoryRepository bidInfoHistoryRepository;
 
   @Autowired
   private EntityManager entityManager;
@@ -352,6 +351,67 @@ public class AuctionRepositoryTest {
     });
   }
 
+  @Test
+  @Order(12)
+  @DisplayName("입찰 내역 저장")
+  void insertBidInfoHistory() {
+    initProductList = initAuctionProduct(initAuction);
+    auctionProductRepository.saveAll(initProductList);
+
+    BidInfoHistoryId key = BidInfoHistoryId.builder()
+        .auctionProductId(initProductList.get(0).getAuctionProductId())
+        .bidPrice(20000L)
+        .build();
+
+    BidInfoHistory bidInfoHistory = BidInfoHistory.builder()
+        .bidInfoHistoryId(key)
+        .auctionId(initAuction.getAuctionId())
+        .consumerId(1L)
+        .build();
+
+    bidInfoHistoryRepository.save(bidInfoHistory);
+  }
+
+  @Test
+  @Order(12)
+  @DisplayName("입찰 내역 조회")
+  void getBidInfoHistory() {
+    initProductList = initAuctionProduct(initAuction);
+    auctionProductRepository.saveAll(initProductList);
+
+    BidInfoHistoryId key = BidInfoHistoryId.builder()
+        .auctionProductId(initProductList.get(0).getAuctionProductId())
+        .bidPrice(20000L)
+        .build();
+
+    BidInfoHistoryId key2 = BidInfoHistoryId.builder()
+        .auctionProductId(initProductList.get(0).getAuctionProductId())
+        .bidPrice(30000L)
+        .build();
+
+    List<BidInfoHistory> list = new ArrayList<>();
+
+    BidInfoHistory bidInfoHistory1 = BidInfoHistory.builder()
+        .bidInfoHistoryId(key)
+        .auctionId(initAuction.getAuctionId())
+        .consumerId(1L)
+        .build();
+
+    BidInfoHistory bidInfoHistory2 = BidInfoHistory.builder()
+        .bidInfoHistoryId(key2)
+        .auctionId(initAuction.getAuctionId())
+        .consumerId(1L)
+        .build();
+
+    list.add(bidInfoHistory1);
+    list.add(bidInfoHistory2);
+
+    bidInfoHistoryRepository.saveAll(list);
+    List<BidInfoHistory> result = bidInfoHistoryRepository.findByAuctionProductId(initProductList.get(0).getAuctionProductId());
+
+    assertEquals(result.get(0).getBidPrice(), 20000L);
+    assertEquals(result.get(1).getBidPrice(), 30000L);
+  }
 
   private Auction initAuction(String title, AuctionStatusEnum auctionStatusEnum) {
     return Auction.builder()

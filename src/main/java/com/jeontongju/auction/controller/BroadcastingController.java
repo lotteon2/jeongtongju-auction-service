@@ -41,13 +41,13 @@ public class BroadcastingController {
    * @return
    */
   @PostMapping("/api/auction/bid")
-  public ResponseEntity<ResponseFormat> bidProduct(
+  public ResponseEntity<ResponseFormat<Void>> bidProduct(
       @RequestHeader String memberId,
       @RequestBody AuctionBidRequestDto auctionBidRequestDto) {
     broadcastingService.sendBidInfoToKafka(auctionBidRequestDto, Long.parseLong(memberId));
 
     return ResponseEntity.ok().body(
-        ResponseFormat.builder()
+        ResponseFormat.<Void>builder()
             .code(HttpStatus.OK.value())
             .message(HttpStatus.OK.getReasonPhrase())
             .detail("경매 입찰 성공")
