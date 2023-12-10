@@ -13,6 +13,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -26,16 +28,19 @@ public class BroadcastingController {
 
   /**
    * 라이브 경매 채팅
+   *
    * @param message
    * @param auctionId
    */
   @MessageMapping("/chat/{auctionId}")
-  public void pubMessage(ChatMessageDto message, @DestinationVariable("auctionId") String auctionId) {
+  public void pubMessage(ChatMessageDto message,
+      @DestinationVariable("auctionId") String auctionId) {
     broadcastingService.sendMessageToKafka(message, auctionId);
   }
 
   /**
    * 라이브 경매 입찰
+   *
    * @param memberId
    * @param auctionBidRequestDto
    * @return
@@ -52,5 +57,35 @@ public class BroadcastingController {
             .message(HttpStatus.OK.getReasonPhrase())
             .detail("경매 입찰 성공")
             .build());
+  }
+
+  @PostMapping("/api/auction/streaming/{auctionId}")
+  public ResponseEntity<ResponseFormat<Void>> startStreaming(
+      @PathVariable String auctionId
+  ) {
+    broadcastingService.startAuction(auctionId);
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 방송 생성 성공")
+                .build()
+        );
+  }
+
+  @PatchMapping("/api/auction/streaming/{auctionId}")
+  public ResponseEntity<ResponseFormat<Void>> endStreaming(
+      @PathVariable String auctionId
+  ) {
+    broadcastingService.endAuction(auctionId);
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 방송 생성 성공")
+                .build()
+        );
   }
 }

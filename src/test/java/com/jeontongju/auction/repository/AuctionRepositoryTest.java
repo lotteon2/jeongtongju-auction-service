@@ -22,6 +22,7 @@ import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
 import com.jeontongju.auction.exception.AuctionProductNotFoundException;
+import com.jeontongju.auction.util.InitData;
 import com.jeontongju.auction.vo.BidInfoHistoryId;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -73,13 +74,16 @@ public class AuctionRepositoryTest {
   @Autowired
   private EntityManager entityManager;
 
+  @Autowired
+  private InitData init;
+
   private Auction initAuction;
   private List<AuctionProduct> initProductList;
   private List<BidInfo> initBidInfoList;
 
   @BeforeEach
   void before() {
-    initAuction = initAuction("제 20회 복순도가 경매대회", AuctionStatusEnum.BEFORE);
+    initAuction = init.initAuction("제 20회 복순도가 경매대회", AuctionStatusEnum.BEFORE);
     auctionRepository.save(initAuction);
   }
 
@@ -131,7 +135,7 @@ public class AuctionRepositoryTest {
   @Order(5)
   @DisplayName("등록 가능한 경매 조회 - 3개 경매 상품 중 1개만 승인 상태")
   void getRegistrableAuction() {
-    initProductList = initAuctionProduct(initAuction);
+    initProductList = init.initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
     SellerAuctionResponseDto responseDto = auctionRepository.findRegistrableAuction()
@@ -145,7 +149,7 @@ public class AuctionRepositoryTest {
   @Order(6)
   @DisplayName("출품 내역 조회 - 복순도가, 안동소주만 경매 완료하여 낙찰정보가 있는 상태")
   void getAuctionEntries() {
-    initProductList = initAuctionProduct(initAuction);
+    initProductList = init.initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
     AuctionProduct auctionProduct = auctionProductRepository.findByName("복순도가").orElseThrow(
@@ -153,7 +157,7 @@ public class AuctionRepositoryTest {
     AuctionProduct auctionProduct2 = auctionProductRepository.findByName("안동소주").orElseThrow(
         EntityNotFoundException::new);
 
-    initBidInfoList = initBidInfo(initAuction, auctionProduct, auctionProduct2);
+    initBidInfoList = init.initBidInfo(initAuction, auctionProduct, auctionProduct2);
     bidInfoRepository.saveAll(initBidInfoList);
 
     entityManager.flush();
@@ -180,17 +184,17 @@ public class AuctionRepositoryTest {
   @Order(7)
   @DisplayName("경매 목록 조회 - 경매 상태에 따른 현황(승인, 대기, 거절, 참여 수)")
   void getAdminAuction() {
-    initProductList = initAuctionProduct(initAuction);
+    initProductList = init.initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
-    Auction auction2 = initAuction("제 19회 복순도가 경매대회", AuctionStatusEnum.AFTER);
+    Auction auction2 = init.initAuction("제 19회 복순도가 경매대회", AuctionStatusEnum.AFTER);
     auctionRepository.save(auction2);
 
-    List<AuctionProduct> initProductList2 = initAuctionProduct(auction2);
+    List<AuctionProduct> initProductList2 = init.initAuctionProduct(auction2);
     auctionProductRepository.saveAll(initProductList2);
 
-    initBidInfoList = initBidInfo(initAuction, initProductList.get(0), initProductList.get(1));
-    List<BidInfo> initBidInfoList2 = initBidInfo(auction2, initProductList2.get(0),
+    initBidInfoList = init.initBidInfo(initAuction, initProductList.get(0), initProductList.get(1));
+    List<BidInfo> initBidInfoList2 = init.initBidInfo(auction2, initProductList2.get(0),
         initProductList2.get(1));
 
     bidInfoRepository.saveAll(initBidInfoList);
@@ -223,23 +227,23 @@ public class AuctionRepositoryTest {
   @DisplayName("특정 경매 상세 조회")
   void getAdminAuctionDetail() {
     // 경매일정이 진행 전인 beforeAuction 추가
-    Auction beforeAuction = initAuction("제 20회 복순도가 경매대회", AuctionStatusEnum.BEFORE);
+    Auction beforeAuction = init.initAuction("제 20회 복순도가 경매대회", AuctionStatusEnum.BEFORE);
     auctionRepository.save(beforeAuction);
 
     // initAuction에 출품한 상품 리스트를 추가 (복순도가, 안동소주, 막걸리나)
-    initProductList = initAuctionProduct(beforeAuction);
+    initProductList = init.initAuctionProduct(beforeAuction);
     auctionProductRepository.saveAll(initProductList);
 
     // 경매일정이 완료된 경매 afterAuction 추가
-    Auction afterAuction = initAuction("제 19회 복순도가 경매대회", AuctionStatusEnum.AFTER);
+    Auction afterAuction = init.initAuction("제 19회 복순도가 경매대회", AuctionStatusEnum.AFTER);
     auctionRepository.save(afterAuction);
 
     // afterAuction에 출품한 상품 리스트 추가 (복순도가, 안동소주, 막걸리나)
-    List<AuctionProduct> initProductList2 = initAuctionProduct(afterAuction);
+    List<AuctionProduct> initProductList2 = init.initAuctionProduct(afterAuction);
     auctionProductRepository.saveAll(initProductList2);
 
     // afterAuction에 출품한 상품에 입찰 정보 추가
-    initBidInfoList = initBidInfo(afterAuction, initProductList2.get(0), initProductList2.get(1));
+    initBidInfoList = init.initBidInfo(afterAuction, initProductList2.get(0), initProductList2.get(1));
     bidInfoRepository.saveAll(initBidInfoList);
 
     // 영속성 초기화
@@ -313,10 +317,10 @@ public class AuctionRepositoryTest {
   @Order(11)
   @DisplayName("소비자의 입찰 목록 조회")
   void getConsumersBidInfo() {
-    initProductList = initAuctionProduct(initAuction);
+    initProductList = init.initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
-    initBidInfoList = initBidInfo(initAuction, initProductList.get(0), initProductList.get(1));
+    initBidInfoList = init.initBidInfo(initAuction, initProductList.get(0), initProductList.get(1));
     bidInfoRepository.saveAll(initBidInfoList);
 
     entityManager.flush();
@@ -355,7 +359,7 @@ public class AuctionRepositoryTest {
   @Order(12)
   @DisplayName("입찰 내역 저장")
   void insertBidInfoHistory() {
-    initProductList = initAuctionProduct(initAuction);
+    initProductList = init.initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
     BidInfoHistoryId key = BidInfoHistoryId.builder()
@@ -376,7 +380,7 @@ public class AuctionRepositoryTest {
   @Order(12)
   @DisplayName("입찰 내역 조회")
   void getBidInfoHistory() {
-    initProductList = initAuctionProduct(initAuction);
+    initProductList = init.initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
     BidInfoHistoryId key = BidInfoHistoryId.builder()
@@ -411,92 +415,5 @@ public class AuctionRepositoryTest {
 
     assertEquals(result.get(0).getBidPrice(), 20000L);
     assertEquals(result.get(1).getBidPrice(), 30000L);
-  }
-
-  private Auction initAuction(String title, AuctionStatusEnum auctionStatusEnum) {
-    return Auction.builder()
-        .title(title)
-        .description("복순도가 누가 가져갈 것 인가")
-        .startDate(LocalDateTime.of(LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.FRIDAY)),
-            LocalTime.of(17, 0)))
-        .status(auctionStatusEnum)
-        .build();
-  }
-
-  private List<AuctionProduct> initAuctionProduct(Auction auction) {
-    List<AuctionProduct> list = new ArrayList<>();
-
-    AuctionProduct auctionProduct = AuctionProduct.builder()
-        .auction(auction)
-        .name("복순도가")
-        .startingPrice(10000L)
-        .description("복순복순")
-        .capacity(500L)
-        .alcoholDegree(17.0)
-        .thumbnailImageUrl("thumbnail_img")
-        .sellerId(1L)
-        .storeImageUrl("store_img")
-        .storeName("덤보네")
-        .storeEmail("email@gmail.com")
-        .storePhoneNumber("010-0101-0101")
-        .businessmanName("김덤보")
-        .build();
-
-    list.add(auctionProduct);
-    list.add(
-        auctionProduct.toBuilder().name("안동소주").status(AuctionProductStatusEnum.ALLOW).build());
-    list.add(auctionProduct.toBuilder().name("막걸리나").status(AuctionProductStatusEnum.DENY).build());
-
-    return list;
-  }
-
-  private List<BidInfo> initBidInfo(Auction auction, AuctionProduct auctionProduct,
-      AuctionProduct auctionProduct2) {
-    List<BidInfo> list = new ArrayList<>();
-
-    BidInfo bidInfo1 = BidInfo.builder()
-        .auction(auction)
-        .auctionProduct(auctionProduct)
-        .consumerId(1L)
-        .bidPrice(10000L)
-        .build();
-
-    BidInfo bidInfo2 = BidInfo.builder()
-        .auction(auction)
-        .auctionProduct(auctionProduct)
-        .consumerId(1L)
-        .bidPrice(11000L)
-        .build();
-
-    BidInfo bidInfo3 = BidInfo.builder()
-        .auction(auction)
-        .auctionProduct(auctionProduct)
-        .consumerId(2L)
-        .bidPrice(12000L)
-        .isBid(true)
-        .build();
-
-    BidInfo bidInfo4 = BidInfo.builder()
-        .auction(auction)
-        .auctionProduct(auctionProduct2)
-        .consumerId(1L)
-        .bidPrice(12000L)
-        .build();
-
-    BidInfo bidInfo5 = BidInfo.builder()
-        .auction(auction)
-        .auctionProduct(auctionProduct2)
-        .consumerId(1L)
-        .bidPrice(15000L)
-        .isBid(true)
-        .build();
-
-    list.add(bidInfo1);
-    list.add(bidInfo2);
-    list.add(bidInfo3);
-    list.add(bidInfo5);
-    list.add(bidInfo4);
-
-    return list;
   }
 }
