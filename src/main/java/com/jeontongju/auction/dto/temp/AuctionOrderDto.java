@@ -1,5 +1,7 @@
 package com.jeontongju.auction.dto.temp;
 
+import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,39 +13,28 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AuctionOrderDto {
 
-  Long consumerId;
+  // orders 테이블을 만들기 위해 필요한 정보
+  private Long consumerId;
+  private LocalDateTime orderDate;
+  private Long totalPrice;
+  private PaymentTypeEnum paymentTypeEnum;
 
-  Long totalPrice;
+  // product_order를 만들기 위해 필요한 정보
+  private String productId;
+  private String productName;
+  private Long productCount;
+  private Long productPrice;
+  private Long sellerId;
+  private String sellerName;
+  private String productImg;
 
-  @Builder.Default
-  Boolean isAuction = true;
-
-  @Builder.Default
-  Long paymentPrice = 0L;
-
-  String productId;
-
-  String productName;
-
-  @Builder.Default
-  Integer productCount = 1;
-
-  Long productPrice;
-
-  @Builder.Default
-  Integer productTotalAmount = 1;
-
-  Long sellerId;
-
-  String sellerName;
-
-  String productImg;
-
-  public static AuctionOrderDto of(Long consumerId, Long totalPrice, String productId, String productName,
-      Long productPrice, Long sellerId, String sellerName, String productImg) {
+  public static AuctionOrderDto of(Long consumerId, Long totalPrice, String productId,
+      String productName, Long productPrice, Long sellerId, String sellerName, String productImg) {
     return AuctionOrderDto.builder()
         .consumerId(consumerId)
+        .orderDate(LocalDateTime.now())
         .totalPrice(totalPrice)
+        .paymentTypeEnum(PaymentTypeEnum.CREDIT)
         .productId(productId)
         .productName(productName)
         .productPrice(productPrice)
