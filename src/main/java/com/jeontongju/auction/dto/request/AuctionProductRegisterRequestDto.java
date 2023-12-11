@@ -25,7 +25,7 @@ public class AuctionProductRegisterRequestDto {
   @NotNull
   private Long startingPrice;
 
-  @NotEmpty
+//  @NotEmpty
   private String thumbnailImageUrl;
 
   @NotEmpty
