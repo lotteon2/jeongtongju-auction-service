@@ -2,6 +2,7 @@ package com.jeontongju.auction.dto.request;
 
 import com.jeontongju.auction.domain.Auction;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -22,13 +23,13 @@ public class AuctionRegisterRequestDto {
   private String description;
 
   @NotNull
-  private LocalDateTime startDate;
+  private String startDate;
 
   public Auction toEntity() {
     return Auction.builder()
         .title(title)
         .description(description)
-        .startDate(startDate)
+        .startDate(LocalDateTime.parse(startDate, DateTimeFormatter.ofPattern("yyyy.MM.dd")))
         .build();
   }
 }
