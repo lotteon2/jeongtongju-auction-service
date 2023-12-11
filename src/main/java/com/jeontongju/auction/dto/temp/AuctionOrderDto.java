@@ -1,6 +1,6 @@
 package com.jeontongju.auction.dto.temp;
 
-import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
+import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +17,7 @@ public class AuctionOrderDto {
   private Long consumerId;
   private LocalDateTime orderDate;
   private Long totalPrice;
-  private PaymentTypeEnum paymentTypeEnum;
+  private PaymentMethodEnum paymentMethodEnum;
 
   // product_order를 만들기 위해 필요한 정보
   private String productId;
@@ -34,7 +34,7 @@ public class AuctionOrderDto {
         .consumerId(consumerId)
         .orderDate(LocalDateTime.now())
         .totalPrice(totalPrice)
-        .paymentTypeEnum(PaymentTypeEnum.CREDIT)
+        .paymentMethodEnum(PaymentMethodEnum.CREDIT)
         .productId(productId)
         .productName(productName)
         .productPrice(productPrice)
