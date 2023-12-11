@@ -2,12 +2,14 @@ package com.jeontongju.auction.repository.querydsl;
 
 import static com.jeontongju.auction.domain.QAuction.auction;
 import static com.jeontongju.auction.domain.QAuctionProduct.auctionProduct;
+import static org.hibernate.internal.util.NullnessHelper.coalesce;
 
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -29,7 +31,7 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
                 SellerAuctionResponseDto.class,
                 auction.auctionId,
                 auction.title,
-                auctionProduct.count().as("currentParticipants")
+                Expressions.as(auctionProduct.count(), "currentParticipants")
             )
         )
         .from(auction)
@@ -37,7 +39,7 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
         .where(
             auction.isDeleted.isFalse(),
             auction.status.eq(AuctionStatusEnum.BEFORE),
-            auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW)
+            auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW).or(auctionProduct.status.isNull())
         )
         .orderBy(auction.startDate.desc())
         .limit(1)

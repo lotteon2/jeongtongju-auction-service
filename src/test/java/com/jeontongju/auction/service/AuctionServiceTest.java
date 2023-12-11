@@ -91,6 +91,16 @@ public class AuctionServiceTest {
   }
 
   @Test
+  @DisplayName("셀러 등록 가능한 경매 조회 - 경매 상품이 없을 경우")
+  void getRegistrableAuctionWithOutProduct() {
+
+    SellerAuctionResponseDto registrableAuction = auctionService.getRegistrableAuction();
+
+    assertEquals(registrableAuction.getTitle(), "제 20회 복순도가 경매대회");
+    assertEquals(registrableAuction.getCurrentParticipants(), 0);
+  }
+
+  @Test
   @DisplayName("셀러 출품 내역 조회 - 복순도가만 경매 완료하여 낙찰정보가 있는 상태")
   void getAuctionEntries() {
     initProductList = init.initAuctionProduct(initAuction);
