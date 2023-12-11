@@ -179,7 +179,7 @@ public class BroadcastingService {
     // 6. 입찰 내역 삭제
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisTemplate.opsForZSet();
     bidHistoryRedis.remove(auctionProductId);
-    redisTemplate.delete("asking_price_" + auctionProductId);
+    redisTemplate.delete("asking_price_" + auctionProductId); 
     kafkaBidInfoTemplate.send(BID_FIN_TOPIC, auctionProductId);
   }
 
