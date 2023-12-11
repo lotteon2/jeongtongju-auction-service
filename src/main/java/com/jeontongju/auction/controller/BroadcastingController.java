@@ -2,6 +2,7 @@ package com.jeontongju.auction.controller;
 
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.request.ChatMessageDto;
+import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
 import com.jeontongju.auction.dto.temp.ResponseFormat;
 import com.jeontongju.auction.service.BroadcastingService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,10 +49,9 @@ public class BroadcastingController {
    */
   @PostMapping("/api/auction/bid")
   public ResponseEntity<ResponseFormat<Void>> bidProduct(
-      @RequestHeader String memberId,
+      @RequestHeader Long memberId,
       @RequestBody AuctionBidRequestDto auctionBidRequestDto) {
-    broadcastingService.sendBidInfoToKafka(auctionBidRequestDto, Long.parseLong(memberId));
-
+    broadcastingService.bidProduct(auctionBidRequestDto, memberId);
     return ResponseEntity.ok().body(
         ResponseFormat.<Void>builder()
             .code(HttpStatus.OK.value())
@@ -85,6 +86,49 @@ public class BroadcastingController {
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 방송 생성 성공")
+                .build()
+        );
+  }
+
+  @GetMapping("/api/auction/room/{auctionId}")
+  public ResponseEntity<ResponseFormat<AuctionBroadcastResponseDto>> enterStreaming(
+      @RequestHeader Long consumerId, @PathVariable String auctionId) {
+
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<AuctionBroadcastResponseDto>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 방 입장 성공")
+                .data(broadcastingService.enterAuction(consumerId, auctionId))
+                .build()
+        );
+  }
+
+  @PatchMapping("/api/auction/bid/{auctionProductId}/askingPrice/{askingPrice}")
+  public ResponseEntity<ResponseFormat<Void>> modifyAskingPrice(
+      @PathVariable String auctionProductId, @PathVariable Long askingPrice
+  ) {
+    broadcastingService.modifyAskingPrice(auctionProductId, askingPrice);
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 호가 수정 성공")
+                .build()
+        );
+  }
+
+  @PostMapping("/api/auction/bid/{auctionProductId}")
+  public ResponseEntity<ResponseFormat<Void>> successfulBid(@PathVariable String auctionProductId) {
+    broadcastingService.successfulBid(auctionProductId);
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("경매 낙찰 성공")
                 .build()
         );
   }
