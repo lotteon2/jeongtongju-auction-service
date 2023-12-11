@@ -180,7 +180,6 @@ public class BroadcastingService {
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisTemplate.opsForZSet();
     bidHistoryRedis.remove(auctionProductId);
     redisTemplate.delete("asking_price_" + auctionProductId);
-
     kafkaBidInfoTemplate.send(BID_FIN_TOPIC, auctionProductId);
   }
 
