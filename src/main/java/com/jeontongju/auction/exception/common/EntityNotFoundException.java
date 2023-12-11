@@ -11,6 +11,6 @@ public class EntityNotFoundException extends RuntimeException {
   }
 
   public HttpStatus getStatus() {
-    return HttpStatus.NOT_FOUND;
+    return HttpStatus.BAD_REQUEST;
   }
 }
