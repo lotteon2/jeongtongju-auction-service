@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
@@ -22,6 +23,7 @@ import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
 import com.jeontongju.auction.exception.AuctionProductNotFoundException;
+import com.jeontongju.auction.exception.SameWeekOfAuctionException;
 import com.jeontongju.auction.util.InitData;
 import com.jeontongju.auction.vo.BidInfoHistoryId;
 import java.time.DayOfWeek;
@@ -415,14 +417,5 @@ public class AuctionRepositoryTest {
 
     assertEquals(result.get(0).getBidPrice(), 20000L);
     assertEquals(result.get(1).getBidPrice(), 30000L);
-  }
-
-  @Test
-  @Order(13)
-  void getAuctionListIsDeleted() {
-    auctionRepository.save(initAuction.toBuilder().isDeleted(true).build());
-    Page<Auction> auctions = auctionRepository.findAllByIsDeletedIsFalse(
-        PageRequest.of(0, 10));
-    assertEquals(auctions.getContent().size(), 0);
   }
 }

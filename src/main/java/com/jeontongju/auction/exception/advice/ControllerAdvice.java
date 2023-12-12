@@ -6,6 +6,7 @@ import com.jeontongju.auction.exception.InvalidAuctionStatusException;
 import com.jeontongju.auction.exception.InvalidConsumerCreditException;
 import com.jeontongju.auction.exception.OverParticipationException;
 import com.jeontongju.auction.exception.SameBidPriceException;
+import com.jeontongju.auction.exception.SameWeekOfAuctionException;
 import com.jeontongju.auction.exception.common.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -143,6 +144,22 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
   @ExceptionHandler(SameBidPriceException.class)
   public ResponseEntity<ResponseFormat<Void>> handleSameBidPriceException(
       SameBidPriceException e
+  ) {
+    HttpStatus status = HttpStatus.BAD_REQUEST;
+    return ResponseEntity
+        .status(status)
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(status.value())
+                .message(status.name())
+                .detail(e.getMessage())
+                .build()
+        );
+  }
+
+  @ExceptionHandler(SameWeekOfAuctionException.class)
+  public ResponseEntity<ResponseFormat<Void>> handleSameWeekOfAuctionException(
+      SameWeekOfAuctionException e
   ) {
     HttpStatus status = HttpStatus.BAD_REQUEST;
     return ResponseEntity

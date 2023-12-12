@@ -21,9 +21,12 @@ import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
 import com.jeontongju.auction.exception.AuctionProductNotFoundException;
 import com.jeontongju.auction.exception.OverParticipationException;
+import com.jeontongju.auction.exception.SameWeekOfAuctionException;
 import com.jeontongju.auction.repository.AuctionProductRepository;
 import com.jeontongju.auction.repository.AuctionRepository;
 import com.jeontongju.auction.repository.BidInfoRepository;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +36,14 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -162,6 +167,13 @@ public class AuctionService {
 
   @Transactional
   public void registerAuction(AuctionRegisterRequestDto request) {
+    Long count = auctionRepository.findDateOfWeek(
+        LocalDate.parse(request.getStartDate(), DateTimeFormatter.ofPattern("yyyy.MM.dd.")));
+
+    if (count > 0) {
+      throw new SameWeekOfAuctionException();
+    }
+
     auctionRepository.save(request.toEntity());
   }
 
@@ -193,7 +205,8 @@ public class AuctionService {
     auctionProductRepository.save(auctionProduct.toBuilder().status(status).build());
   }
 
-  public Page<ConsumerAuctionBidResponseDto> getConsumerBidInfo(Long consumerId, Pageable pageable) {
+  public Page<ConsumerAuctionBidResponseDto> getConsumerBidInfo(Long consumerId,
+      Pageable pageable) {
     Map<String, Long> lastBidMap = bidInfoRepository.findAllByIsBidTrue().stream()
         .collect(Collectors.toMap(bidInfo -> bidInfo.getAuctionProduct().getName(),
             BidInfo::getBidPrice));
@@ -214,7 +227,7 @@ public class AuctionService {
         .collect(Collectors.toList()
         );
 
-      return toPage(result, pageable);
+    return toPage(result, pageable);
   }
 
 

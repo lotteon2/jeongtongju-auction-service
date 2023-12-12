@@ -3,6 +3,7 @@ package com.jeontongju.auction.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
@@ -17,14 +18,17 @@ import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
+import com.jeontongju.auction.exception.SameWeekOfAuctionException;
 import com.jeontongju.auction.repository.AuctionProductRepository;
 import com.jeontongju.auction.repository.AuctionRepository;
 import com.jeontongju.auction.repository.BidInfoRepository;
 import com.jeontongju.auction.util.InitData;
+import java.text.DateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -244,5 +249,18 @@ public class AuctionServiceTest {
 
     assertEquals(consumerBidInfo.getContent().size(), 2);
     assertEquals(consumerBidInfo.getContent().get(0).getAuctionId(), initAuction.getAuctionId());
+  }
+
+
+  @Test
+  @DisplayName("같은 주차 경매 생성 불가")
+  void sameWeekRegisterAuction() {
+    AuctionRegisterRequestDto request = AuctionRegisterRequestDto.builder()
+        .title("제 20회 복순도가 경매대회 2")
+        .description("설명 설명")
+        .startDate(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd.")))
+        .build();
+
+    assertThrows(SameWeekOfAuctionException.class, () -> auctionService.registerAuction(request));
   }
 }

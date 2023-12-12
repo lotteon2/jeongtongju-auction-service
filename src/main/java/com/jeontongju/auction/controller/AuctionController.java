@@ -108,7 +108,7 @@ public class AuctionController {
         );
   }
 
-  @GetMapping("/consumer/detatil")
+  @GetMapping("/consumer/detail")
   public ResponseEntity<ResponseFormat<AuctionDetailResponseDto>> getConsumerAuctionDetail() {
 
     return ResponseEntity.ok()

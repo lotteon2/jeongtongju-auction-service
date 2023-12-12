@@ -13,6 +13,7 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.WeekFields;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -39,7 +40,8 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
         .where(
             auction.isDeleted.isFalse(),
             auction.status.eq(AuctionStatusEnum.BEFORE),
-            auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW).or(auctionProduct.status.isNull())
+            auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW)
+                .or(auctionProduct.status.isNull())
         )
         .orderBy(auction.startDate.desc())
         .limit(1)
@@ -69,6 +71,17 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
         .fetchOne();
 
     return Optional.ofNullable(result);
+  }
+
+  @Override
+  public Long findDateOfWeek(LocalDate localDate) {
+    return jpaQueryFactory.select(auction.count())
+        .from(auction)
+        .where(
+            auction.startDate.week().eq(localDate.get(WeekFields.ISO.weekOfWeekBasedYear())),
+            auction.isDeleted.isFalse()
+        )
+        .fetchOne();
   }
 
 }
