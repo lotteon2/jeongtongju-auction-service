@@ -1,6 +1,7 @@
 package com.jeontongju.auction.dto.request;
 
 import com.jeontongju.auction.domain.Auction;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import javax.validation.constraints.NotEmpty;
@@ -29,7 +30,7 @@ public class AuctionRegisterRequestDto {
     return Auction.builder()
         .title(title)
         .description(description)
-        .startDate(LocalDateTime.parse(startDate, DateTimeFormatter.ofPattern("yyyy.MM.dd")))
+        .startDate(LocalDate.parse(startDate, DateTimeFormatter.ofPattern("yyyy.MM.dd.")).atTime(17, 0))
         .build();
   }
 }
