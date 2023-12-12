@@ -5,6 +5,7 @@ import com.jeontongju.auction.dto.request.ChatMessageDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
 import com.jeontongju.auction.service.BroadcastingService;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
+import io.github.bitbox.bitbox.enums.MemberRoleEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -88,7 +89,8 @@ public class BroadcastingController {
 
   @GetMapping("/api/auction/room/{auctionId}")
   public ResponseEntity<ResponseFormat<AuctionBroadcastResponseDto>> enterStreaming(
-      @RequestHeader Long consumerId, @PathVariable String auctionId) {
+      @RequestHeader Long consumerId, @RequestHeader MemberRoleEnum memberRole,
+      @PathVariable String auctionId) {
 
     return ResponseEntity.ok()
         .body(
@@ -96,7 +98,7 @@ public class BroadcastingController {
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 방 입장 성공")
-                .data(broadcastingService.enterAuction(consumerId, auctionId))
+                .data(broadcastingService.enterAuction(consumerId, memberRole, auctionId))
                 .build()
         );
   }

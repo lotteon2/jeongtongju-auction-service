@@ -24,6 +24,7 @@ import com.jeontongju.auction.repository.BidInfoRepository;
 import com.jeontongju.auction.vo.BidInfoHistoryId;
 import io.github.bitbox.bitbox.dto.AuctionOrderDto;
 import io.github.bitbox.bitbox.dto.MemberDto;
+import io.github.bitbox.bitbox.enums.MemberRoleEnum;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -94,7 +95,7 @@ public class BroadcastingService {
 
   public void bidProduct(AuctionBidRequestDto auctionBidRequestDto, Long consumerId) {
     // 1. 크레딧 검사
-    ValueOperations<String, MemberDto> memberRedis = redisTemplate.opsForValue();
+    ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
     MemberDto memberDto = memberRedis.get(consumerId);
     Long memberCredit = memberDto.getCredit();
 
@@ -126,15 +127,18 @@ public class BroadcastingService {
     kafkaBidInfoTemplate.send(BID_FIN_TOPIC, auctionProductId);
   }
 
-  public AuctionBroadcastResponseDto enterAuction(Long consumerId, String auctionId) {
+  public AuctionBroadcastResponseDto enterAuction(Long consumerId, MemberRoleEnum memberRoleEnum,
+      String auctionId) {
     Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
 
-    // TODO : Circuitbreaker
-    MemberDto memberDto = client.getConsumerInfo(consumerId).getData().to(consumerId);
-    ValueOperations<String, MemberDto> memberRedis = redisTemplate.opsForValue();
-    memberRedis.set(consumerId.toString(), memberDto, TTL, TimeUnit.HOURS);
-
+    if (!memberRoleEnum.equals(MemberRoleEnum.ROLE_ADMIN)) {
+      // TODO : Circuitbreaker
+      MemberDto memberDto = client.getConsumerInfo(consumerId).getData().to(consumerId);
+      ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
+      memberRedis.set(consumerId, memberDto, TTL, TimeUnit.HOURS);
+    }
+    
     return AuctionBroadcastResponseDto.of(auction);
   }
 
@@ -167,7 +171,7 @@ public class BroadcastingService {
     int idx = list.size() - 1;
     list.set(idx, list.get(idx).toBuilder().isBid(true).build());
     bidInfoRepository.saveAll(list);
-    
+
     // 5. 주문 카프카 발행
     kafkaOrderTemplate.send(AUCTION_ORDER_TOPIC, AuctionOrderDto.of(
         successfulBid.getConsumerId(), successfulBid.getBidPrice(),
@@ -184,7 +188,7 @@ public class BroadcastingService {
   }
 
   public void sendMessageToKafka(ChatMessageDto message, String auctionId) {
-    ValueOperations<String, MemberDto> memberRedis = redisTemplate.opsForValue();
+    ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
     MemberDto memberDto = memberRedis.get(message.getMemberId());
 
     kafkaChatTemplate.send(CHAT_TOPIC,
