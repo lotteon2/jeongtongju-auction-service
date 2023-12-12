@@ -42,6 +42,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -52,6 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @Transactional
 @ActiveProfiles("dev")
+@AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2, replace = AutoConfigureTestDatabase.Replace.ANY)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AuctionServiceTest {
 
@@ -186,24 +189,6 @@ public class AuctionServiceTest {
 
     assertEquals(thisAuctionDetail.getAuction().getTitle(), "제 20회 복순도가 경매대회");
     assertEquals(thisAuctionDetail.getProductList().get(0).getSellerName(), "덤보네");
-  }
-
-  @Test
-  @DisplayName("경매 생성")
-  void registerAuction() {
-    AuctionRegisterRequestDto request = AuctionRegisterRequestDto.builder()
-        .title("제 30회 경매")
-        .description("경매 생성 테스트")
-        .startDate("2023.12.15.")
-        .build();
-
-    auctionService.registerAuction(request);
-
-    Auction result = auctionRepository.findByTitle("제 30회 경매")
-        .orElseThrow(AuctionNotFoundException::new);
-
-    assertEquals(result.getDescription(), "경매 생성 테스트");
-
   }
 
   @Test

@@ -1,5 +1,6 @@
 package com.jeontongju.auction.dto.redis;
 
+import io.github.bitbox.bitbox.dto.MemberDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

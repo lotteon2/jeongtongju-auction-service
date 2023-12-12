@@ -2,7 +2,7 @@ package com.jeontongju.auction.dto.request;
 
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
-import com.jeontongju.auction.dto.temp.SellerInfoForAuctionDto;
+import io.github.bitbox.bitbox.dto.SellerInfoForAuctionDto;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

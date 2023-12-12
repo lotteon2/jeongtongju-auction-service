@@ -1,7 +1,7 @@
 package com.jeontongju.auction.dto.kafka;
 
-import com.jeontongju.auction.dto.redis.MemberDto;
 import com.jeontongju.auction.dto.request.ChatMessageDto;
+import io.github.bitbox.bitbox.dto.MemberDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

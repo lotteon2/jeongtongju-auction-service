@@ -1,7 +1,7 @@
 package com.jeontongju.auction.client;
 
-import com.jeontongju.auction.dto.temp.ConsumerInfoDto;
-import com.jeontongju.auction.dto.temp.FeignFormat;
+import io.github.bitbox.bitbox.dto.ConsumerInfoDto;
+import io.github.bitbox.bitbox.dto.FeignFormat;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
