@@ -78,7 +78,7 @@ public class AuctionService {
    * @return Page<AdminAuctionResponseDto>
    */
   public Page<AdminAuctionResponseDto> getAdminAuction(Pageable pageable) {
-    return auctionRepository.findAll(pageable).map(AdminAuctionResponseDto::new);
+    return auctionRepository.findAllByIsDeletedIsFalse(pageable).map(AdminAuctionResponseDto::new);
   }
 
   /**

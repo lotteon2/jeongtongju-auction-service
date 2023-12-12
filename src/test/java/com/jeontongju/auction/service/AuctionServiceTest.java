@@ -189,7 +189,7 @@ public class AuctionServiceTest {
     AuctionRegisterRequestDto request = AuctionRegisterRequestDto.builder()
         .title("제 30회 경매")
         .description("경매 생성 테스트")
-        .startDate(LocalDateTime.of(2023, 12, 9, 17, 0))
+        .startDate("2023.12.15.")
         .build();
 
     auctionService.registerAuction(request);

@@ -416,4 +416,13 @@ public class AuctionRepositoryTest {
     assertEquals(result.get(0).getBidPrice(), 20000L);
     assertEquals(result.get(1).getBidPrice(), 30000L);
   }
+
+  @Test
+  @Order(13)
+  void getAuctionListIsDeleted() {
+    auctionRepository.save(initAuction.toBuilder().isDeleted(true).build());
+    Page<Auction> auctions = auctionRepository.findAllByIsDeletedIsFalse(
+        PageRequest.of(0, 10));
+    assertEquals(auctions.getContent().size(), 0);
+  }
 }
