@@ -138,7 +138,7 @@ public class BroadcastingService {
       ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
       memberRedis.set(consumerId, memberDto, TTL, TimeUnit.HOURS);
     }
-    
+
     return AuctionBroadcastResponseDto.of(auction);
   }
 
@@ -188,9 +188,14 @@ public class BroadcastingService {
   }
 
   public void sendMessageToKafka(ChatMessageDto message, String auctionId) {
-    ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
-    MemberDto memberDto = memberRedis.get(message.getMemberId());
-
+    MemberDto memberDto;
+    if (message.getMemberId() == 0) {
+      memberDto = MemberDto.builder().memberId(0L).nickname("관리자").profileImage("").credit(0L)
+          .build();
+    } else {
+      ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
+      memberDto = memberRedis.get(message.getMemberId());
+    }
     kafkaChatTemplate.send(CHAT_TOPIC,
         KafkaChatMessageDto.toKafkaChatMessageDto(message, memberDto, auctionId));
   }
