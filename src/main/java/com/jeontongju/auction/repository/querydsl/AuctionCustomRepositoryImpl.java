@@ -8,7 +8,9 @@ import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.DayOfWeek;
@@ -32,16 +34,19 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
                 SellerAuctionResponseDto.class,
                 auction.auctionId,
                 auction.title,
-                Expressions.as(auctionProduct.count(), "currentParticipants")
+                ExpressionUtils.as(
+                    new CaseBuilder()
+                        .when(auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW)).then(auctionProduct.count())
+                        .otherwise(0L),
+                    "currentParticipants"
+                )
             )
         )
         .from(auction)
         .leftJoin(auction.auctionProductList, auctionProduct)
         .where(
             auction.isDeleted.isFalse(),
-            auction.status.eq(AuctionStatusEnum.BEFORE),
-            auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW)
-                .or(auctionProduct.status.isNull())
+            auction.status.eq(AuctionStatusEnum.BEFORE)
         )
         .orderBy(auction.startDate.desc())
         .limit(1)
