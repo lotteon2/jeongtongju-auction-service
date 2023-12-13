@@ -33,7 +33,7 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
                 auction.auctionId,
                 auction.title,
                 Expressions.cases()
-                    .when(auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW)).then(1L)
+                    .when(auctionProduct.status.eq(AuctionProductStatusEnum.CONFIRM)).then(1L)
                     .otherwise(0L)
                     .sum().as("currentParticipants")
             )

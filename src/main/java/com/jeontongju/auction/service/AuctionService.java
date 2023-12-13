@@ -152,7 +152,7 @@ public class AuctionService {
         auction.getAuctionProductList() == null ? 0L
             : auction.getAuctionProductList().stream()
                 .filter(auctionProduct -> auctionProduct.getStatus().equals(
-                    AuctionProductStatusEnum.ALLOW)).count();
+                    AuctionProductStatusEnum.CONFIRM)).count();
 
     if (participants > LIMIT_PARTICIPANTS) {
       throw new OverParticipationException();
