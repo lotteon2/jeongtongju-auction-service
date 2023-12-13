@@ -9,7 +9,6 @@ import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.querydsl.core.types.Projections;
-import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.DayOfWeek;
@@ -33,10 +32,10 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
                 SellerAuctionResponseDto.class,
                 auction.auctionId,
                 auction.title,
-                new CaseBuilder()
-                    .when(auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW))
-                    .then(auctionProduct.count())
-                    .otherwise(Expressions.constant(0L)).as("currentParticipants")
+                Expressions.cases()
+                    .when(auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW)).then(1L)
+                    .otherwise(0L)
+                    .sum().as("currentParticipants")
             )
         )
         .from(auction)
