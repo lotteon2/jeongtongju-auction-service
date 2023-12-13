@@ -139,7 +139,7 @@ public class BroadcastingService {
       memberRedis.set(consumerId, memberDto, TTL, TimeUnit.HOURS);
     }
 
-    return AuctionBroadcastResponseDto.of(auction);
+    return AuctionBroadcastResponseDto.of(auction, consumerId);
   }
 
   public void modifyAskingPrice(String auctionProductId, Long askingPrice) {

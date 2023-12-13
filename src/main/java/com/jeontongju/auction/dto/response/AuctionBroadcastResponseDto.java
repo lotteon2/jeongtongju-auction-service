@@ -13,11 +13,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuctionBroadcastResponseDto {
+  private Long memberId;
   private String auctionId;
   private List<BroadcastProductResponseDto> auctionProductList;
 
-  public static AuctionBroadcastResponseDto of(Auction auction) {
+  public static AuctionBroadcastResponseDto of(Auction auction, Long memberId) {
     return AuctionBroadcastResponseDto.builder()
+        .memberId(memberId)
         .auctionId(auction.getAuctionId())
         .auctionProductList(
             auction.getAuctionProductList()
