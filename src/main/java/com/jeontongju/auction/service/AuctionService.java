@@ -168,7 +168,7 @@ public class AuctionService {
   @Transactional
   public void registerAuction(AuctionRegisterRequestDto request) {
     Long count = auctionRepository.findDateOfWeek(
-        LocalDate.parse(request.getStartDate(), DateTimeFormatter.ofPattern("yyyy.MM.dd.")));
+        LocalDate.parse(request.getStartDate(), DateTimeFormatter.ofPattern("yyyy.M.d.")));
 
     if (count > 0) {
       throw new SameWeekOfAuctionException();
