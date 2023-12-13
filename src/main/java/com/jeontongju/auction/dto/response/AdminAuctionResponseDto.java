@@ -30,12 +30,12 @@ public class AdminAuctionResponseDto extends AuctionResponseDto {
 
     if (auction.getStatus().equals(AuctionStatusEnum.AFTER)) {
       this.participation = countFilteredNumbers(auction.getAuctionProductList(),
-          auctionProduct -> auctionProduct.getStatus() == AuctionProductStatusEnum.CONFIRM);
+          auctionProduct -> auctionProduct.getStatus() == AuctionProductStatusEnum.ALLOW);
     } else {
       this.wait = countFilteredNumbers(auction.getAuctionProductList(),
           auctionProduct -> auctionProduct.getStatus() == AuctionProductStatusEnum.WAIT);
       this.allow = countFilteredNumbers(auction.getAuctionProductList(),
-          auctionProduct -> auctionProduct.getStatus() == AuctionProductStatusEnum.CONFIRM);
+          auctionProduct -> auctionProduct.getStatus() == AuctionProductStatusEnum.ALLOW);
       this.deny = countFilteredNumbers(auction.getAuctionProductList(),
           auctionProduct -> auctionProduct.getStatus() == AuctionProductStatusEnum.DENY);
     }

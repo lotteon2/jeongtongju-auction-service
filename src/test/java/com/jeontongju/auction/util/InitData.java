@@ -48,7 +48,7 @@ public class InitData {
 
     list.add(auctionProduct);
     list.add(
-        auctionProduct.toBuilder().name("안동소주").status(AuctionProductStatusEnum.CONFIRM).build());
+        auctionProduct.toBuilder().name("안동소주").status(AuctionProductStatusEnum.ALLOW).build());
     list.add(auctionProduct.toBuilder().name("막걸리나").status(AuctionProductStatusEnum.DENY).build());
 
     return list;
