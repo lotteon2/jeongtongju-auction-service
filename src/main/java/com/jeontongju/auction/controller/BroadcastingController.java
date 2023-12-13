@@ -61,7 +61,7 @@ public class BroadcastingController {
   public ResponseEntity<ResponseFormat<Void>> startStreaming(
       @PathVariable String auctionId
   ) {
-    broadcastingService.startAuction(auctionId);
+//    broadcastingService.startAuction(auctionId);
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()
@@ -82,7 +82,7 @@ public class BroadcastingController {
             ResponseFormat.<Void>builder()
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
-                .detail("경매 방송 생성 성공")
+                .detail("경매 방송 종료 성공")
                 .build()
         );
   }
