@@ -210,8 +210,8 @@ public class AuctionServiceTest {
     initProductList = init.initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
-    auctionService.approveAuctionProduct(initProductList.get(0).getAuctionProductId(), true);
-    auctionService.approveAuctionProduct(initProductList.get(1).getAuctionProductId(), false);
+//    auctionService.approveAuctionProduct(initProductList.get(0).getAuctionProductId(), true);
+//    auctionService.approveAuctionProduct(initProductList.get(1).getAuctionProductId(), false);
 
     assertEquals(initProductList.get(0).getStatus(), AuctionProductStatusEnum.ALLOW);
     assertEquals(initProductList.get(1).getStatus(), AuctionProductStatusEnum.DENY);

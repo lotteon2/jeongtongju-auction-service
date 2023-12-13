@@ -183,7 +183,7 @@ public class AuctionController {
         );
   }
 
-  @PatchMapping("/confirm/product/{auctionProductId}/confirm/{confirmStatus}")
+  @PatchMapping("/product/{auctionProductId}/confirm/{confirmStatus}")
   public ResponseEntity<ResponseFormat<Void>> approveAuctionProduct(
       @PathVariable String auctionProductId, @PathVariable AuctionProductStatusEnum confirmStatus
   ) {
