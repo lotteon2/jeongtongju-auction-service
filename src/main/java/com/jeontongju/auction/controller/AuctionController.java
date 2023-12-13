@@ -8,6 +8,7 @@ import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.ConsumerAuctionBidResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
+import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.service.AuctionService;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
@@ -182,13 +183,13 @@ public class AuctionController {
         );
   }
 
-  @PatchMapping("/confirm/product/{auctionProductId}/confirm/{confirm}")
+  @PatchMapping("/confirm/product/{auctionProductId}/confirm/{confirmStatus}")
   public ResponseEntity<ResponseFormat<Void>> approveAuctionProduct(
-      @PathVariable String auctionProductId, @PathVariable Boolean confirm
+      @PathVariable String auctionProductId, @PathVariable AuctionProductStatusEnum confirmStatus
   ) {
-    auctionService.approveAuctionProduct(auctionProductId, confirm);
+    auctionService.approveAuctionProduct(auctionProductId, confirmStatus);
     String message = "경매 물품 승인 성공";
-    if (!confirm) {
+    if (confirmStatus.equals(AuctionProductStatusEnum.DENY)) {
       message = "경매 물품 반려 성공";
     }
 

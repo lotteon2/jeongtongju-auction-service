@@ -194,15 +194,11 @@ public class AuctionService {
   }
 
   @Transactional
-  public void approveAuctionProduct(String auctionProductId, Boolean confirm) {
+  public void approveAuctionProduct(String auctionProductId, AuctionProductStatusEnum confirmStatus) {
     AuctionProduct auctionProduct = auctionProductRepository.findById(auctionProductId).orElseThrow(
         AuctionProductNotFoundException::new);
 
-    AuctionProductStatusEnum status = confirm
-        ? AuctionProductStatusEnum.ALLOW
-        : AuctionProductStatusEnum.DENY;
-
-    auctionProductRepository.save(auctionProduct.toBuilder().status(status).build());
+    auctionProductRepository.save(auctionProduct.toBuilder().status(confirmStatus).build());
   }
 
   public Page<ConsumerAuctionBidResponseDto> getConsumerBidInfo(Long consumerId,
