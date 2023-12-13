@@ -8,7 +8,6 @@ import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
-import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
@@ -34,12 +33,10 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
                 SellerAuctionResponseDto.class,
                 auction.auctionId,
                 auction.title,
-                ExpressionUtils.as(
-                    new CaseBuilder()
-                        .when(auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW)).then(auctionProduct.count())
-                        .otherwise(0L),
-                    "currentParticipants"
-                )
+                new CaseBuilder()
+                    .when(auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW))
+                    .then(auctionProduct.count())
+                    .otherwise(Expressions.constant(0L)).as("currentParticipants")
             )
         )
         .from(auction)
