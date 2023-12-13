@@ -27,7 +27,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry.addEndpoint("/chat")   //SockJS 연결 주소
-        .setAllowedOriginPatterns("*")
+        .setAllowedOrigins("https://jeontongju-front-admin.vercel.app")
         .withSockJS();
   }
 
