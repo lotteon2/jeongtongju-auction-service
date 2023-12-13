@@ -18,9 +18,6 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-  @Value("socket.domain.admin")
-  private String domainAdmin;
-
   @Override
   public void configureMessageBroker(MessageBrokerRegistry registry) {
     registry.setApplicationDestinationPrefixes("/pub");       //클라이언트에서 보낸 메세지를 받을 prefix
@@ -30,7 +27,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry.addEndpoint("/chat")   //SockJS 연결 주소
-        .setAllowedOrigins(domainAdmin)
+        .setAllowedOrigins("*")
         .withSockJS();
   }
 
