@@ -133,7 +133,6 @@ public class BroadcastingService {
         .orElseThrow(AuctionNotFoundException::new);
 
     if (!memberRoleEnum.equals(MemberRoleEnum.ROLE_ADMIN)) {
-      // TODO : Circuitbreaker
       MemberDto memberDto = client.getConsumerInfo(consumerId).getData().to(consumerId);
       ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
       memberRedis.set(consumerId, memberDto, TTL, TimeUnit.HOURS);
