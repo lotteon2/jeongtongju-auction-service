@@ -1,6 +1,7 @@
 package com.jeontongju.auction.exception.advice;
 
 import com.jeontongju.auction.enums.ResponseEnum;
+import com.jeontongju.auction.exception.DuplicateSellerRegisterProductException;
 import com.jeontongju.auction.exception.InvalidAuctionStatusException;
 import com.jeontongju.auction.exception.InvalidConsumerCreditException;
 import com.jeontongju.auction.exception.OverParticipationException;
@@ -160,6 +161,22 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
   @ExceptionHandler(SameWeekOfAuctionException.class)
   public ResponseEntity<ResponseFormat<Void>> handleSameWeekOfAuctionException(
       SameWeekOfAuctionException e
+  ) {
+    HttpStatus status = HttpStatus.BAD_REQUEST;
+    return ResponseEntity
+        .status(status)
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(status.value())
+                .message(status.name())
+                .detail(e.getMessage())
+                .build()
+        );
+  }
+
+  @ExceptionHandler(DuplicateSellerRegisterProductException.class)
+  public ResponseEntity<ResponseFormat<Void>> handleAlreadyRegisteredProductException(
+      DuplicateSellerRegisterProductException e
   ) {
     HttpStatus status = HttpStatus.BAD_REQUEST;
     return ResponseEntity

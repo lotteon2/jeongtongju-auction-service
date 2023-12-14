@@ -9,6 +9,7 @@ import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
 import com.jeontongju.auction.dto.request.AuctionModifyRequestDto;
+import com.jeontongju.auction.dto.request.AuctionProductRegisterRequestDto;
 import com.jeontongju.auction.dto.request.AuctionRegisterRequestDto;
 import com.jeontongju.auction.dto.response.AuctionDetailResponseDto;
 import com.jeontongju.auction.dto.response.AuctionProductBidResponseDto;
@@ -17,20 +18,14 @@ import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
-import com.jeontongju.auction.exception.AuctionNotFoundException;
+import com.jeontongju.auction.exception.DuplicateSellerRegisterProductException;
 import com.jeontongju.auction.exception.SameWeekOfAuctionException;
 import com.jeontongju.auction.repository.AuctionProductRepository;
 import com.jeontongju.auction.repository.AuctionRepository;
 import com.jeontongju.auction.repository.BidInfoRepository;
 import com.jeontongju.auction.util.InitData;
-import java.text.DateFormat;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
@@ -38,7 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -210,8 +204,10 @@ public class AuctionServiceTest {
     initProductList = init.initAuctionProduct(initAuction);
     auctionProductRepository.saveAll(initProductList);
 
-    auctionService.approveAuctionProduct(initProductList.get(0).getAuctionProductId(),  AuctionProductStatusEnum.ALLOW);
-    auctionService.approveAuctionProduct(initProductList.get(1).getAuctionProductId(), AuctionProductStatusEnum.DENY);
+    auctionService.approveAuctionProduct(initProductList.get(0).getAuctionProductId(),
+        AuctionProductStatusEnum.ALLOW);
+    auctionService.approveAuctionProduct(initProductList.get(1).getAuctionProductId(),
+        AuctionProductStatusEnum.DENY);
 
     assertEquals(initProductList.get(0).getStatus(), AuctionProductStatusEnum.ALLOW);
     assertEquals(initProductList.get(1).getStatus(), AuctionProductStatusEnum.DENY);
@@ -247,5 +243,29 @@ public class AuctionServiceTest {
         .build();
 
     assertThrows(SameWeekOfAuctionException.class, () -> auctionService.registerAuction(request));
+  }
+
+  @Test
+  @DisplayName("이미 경매에 등록된 셀러 재등록 불가")
+  void alreadyRegisteredProduct() {
+    initProductList = init.initAuctionProduct(initAuction);
+    auctionProductRepository.saveAll(initProductList);
+
+    entityManager.flush();
+    entityManager.clear();
+
+    AuctionProductRegisterRequestDto request = AuctionProductRegisterRequestDto.builder()
+        .auctionId(initAuction.getAuctionId())
+        .auctionProductName("복순2도가")
+        .startingPrice(10000L)
+        .thumbnailImageUrl("")
+        .description("설명")
+        .capacity(500L)
+        .alcoholDegree(14.0)
+        .build();
+
+    assertThrows(DuplicateSellerRegisterProductException.class,
+        () -> auctionService.registerAuctionProduct(request, 1L));
+
   }
 }

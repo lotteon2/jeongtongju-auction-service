@@ -17,6 +17,7 @@ import com.jeontongju.auction.dto.response.SellerAuctionEntriesResponseDto;
 import com.jeontongju.auction.dto.response.SellerAuctionResponseDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
+import com.jeontongju.auction.exception.DuplicateSellerRegisterProductException;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
 import com.jeontongju.auction.exception.AuctionProductNotFoundException;
 import com.jeontongju.auction.exception.OverParticipationException;
@@ -150,9 +151,18 @@ public class AuctionService {
 
     long participants =
         auction.getAuctionProductList() == null ? 0L
-            : auction.getAuctionProductList().stream()
-                .filter(auctionProduct -> auctionProduct.getStatus().equals(
-                    AuctionProductStatusEnum.ALLOW)).count();
+            : auction.getAuctionProductList()
+                .stream()
+                .filter(
+                    auctionProduct -> {
+                      if (auctionProduct.getSellerId().equals(sellerId) &&
+                          !auctionProduct.getStatus().equals(AuctionProductStatusEnum.DENY)) {
+                        throw new DuplicateSellerRegisterProductException();
+                      }
+
+                      return auctionProduct.getStatus().equals(AuctionProductStatusEnum.ALLOW);
+                    }
+                ).count();
 
     if (participants >= LIMIT_PARTICIPANTS) {
       throw new OverParticipationException();
@@ -193,7 +203,8 @@ public class AuctionService {
   }
 
   @Transactional
-  public void approveAuctionProduct(String auctionProductId, AuctionProductStatusEnum confirmStatus) {
+  public void approveAuctionProduct(String auctionProductId,
+      AuctionProductStatusEnum confirmStatus) {
     AuctionProduct auctionProduct = auctionProductRepository.findById(auctionProductId).orElseThrow(
         AuctionProductNotFoundException::new);
 
