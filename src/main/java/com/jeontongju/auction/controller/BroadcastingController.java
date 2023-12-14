@@ -61,7 +61,7 @@ public class BroadcastingController {
   public ResponseEntity<ResponseFormat<Void>> startStreaming(
       @PathVariable String auctionId
   ) {
-//    broadcastingService.startAuction(auctionId);
+    broadcastingService.startAuction(auctionId);
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()
