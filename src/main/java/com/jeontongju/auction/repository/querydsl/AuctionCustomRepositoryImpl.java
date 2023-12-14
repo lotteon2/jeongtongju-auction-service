@@ -42,9 +42,11 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
         .leftJoin(auction.auctionProductList, auctionProduct)
         .where(
             auction.isDeleted.isFalse(),
-            auction.status.eq(AuctionStatusEnum.BEFORE)
+            auction.status.eq(AuctionStatusEnum.BEFORE),
+            auction.startDate.after(
+                getTargetAuctionDate(LocalDate.now(), DayOfWeek.WEDNESDAY).atStartOfDay())
         )
-        .orderBy(auction.startDate.desc())
+        .orderBy(auction.startDate.asc())
         .limit(1)
         .groupBy(auction.auctionId)
         .fetchOne();
@@ -54,18 +56,12 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
 
   @Override
   public Optional<Auction> findThisAuction() {
-    LocalDate currentDate = LocalDate.now();
-    int theDaysLeft = DayOfWeek.FRIDAY.getValue() - currentDate.getDayOfWeek().getValue();
-    if (theDaysLeft < 0) {
-      theDaysLeft += 7;
-    }
-    LocalDate nextFriday = currentDate.plusDays(theDaysLeft);
-
     Auction result = jpaQueryFactory
         .selectFrom(auction)
         .where(
             auction.isDeleted.isFalse(),
-            auction.startDate.after(nextFriday.atStartOfDay())
+            auction.startDate.after(
+                getTargetAuctionDate(LocalDate.now(), DayOfWeek.FRIDAY).atStartOfDay())
         )
         .orderBy(auction.startDate.asc())
         .limit(1)
@@ -83,6 +79,14 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
             auction.isDeleted.isFalse()
         )
         .fetchOne();
+  }
+
+  private LocalDate getTargetAuctionDate(LocalDate today, DayOfWeek dayOfWeek) {
+    if (today.getDayOfWeek().compareTo(dayOfWeek) <= 0) {
+      return today.with(DayOfWeek.FRIDAY);
+    } else {
+      return today.plusDays(7).with(DayOfWeek.FRIDAY);
+    }
   }
 
 }
