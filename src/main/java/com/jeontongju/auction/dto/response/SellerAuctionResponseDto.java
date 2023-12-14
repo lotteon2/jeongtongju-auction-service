@@ -1,6 +1,5 @@
 package com.jeontongju.auction.dto.response;
 
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,4 +13,7 @@ import lombok.NoArgsConstructor;
 public class SellerAuctionResponseDto {
   private String auctionId;
   private String title;
+  private Long currentParticipants;
+  @Builder.Default
+  private Long maxParticipants = 5L;
 }
