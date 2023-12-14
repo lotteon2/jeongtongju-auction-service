@@ -30,7 +30,7 @@ public class AuctionRegisterRequestDto {
     return Auction.builder()
         .title(title)
         .description(description)
-        .startDate(LocalDate.parse(startDate, DateTimeFormatter.ofPattern("yyyy.MM.dd.")).atTime(17, 0))
+        .startDate(LocalDate.parse(startDate, DateTimeFormatter.ofPattern("yyyy.M.d.")).atTime(17, 0))
         .build();
   }
 }

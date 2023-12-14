@@ -25,6 +25,8 @@ import com.jeontongju.auction.repository.AuctionRepository;
 import com.jeontongju.auction.repository.BidInfoRepository;
 import com.jeontongju.auction.util.InitData;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -268,4 +270,5 @@ public class AuctionServiceTest {
         () -> auctionService.registerAuctionProduct(request, 1L));
 
   }
+
 }
