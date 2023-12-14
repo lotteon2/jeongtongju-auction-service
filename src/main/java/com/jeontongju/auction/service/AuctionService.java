@@ -154,11 +154,10 @@ public class AuctionService {
                 .filter(auctionProduct -> auctionProduct.getStatus().equals(
                     AuctionProductStatusEnum.ALLOW)).count();
 
-    if (participants > LIMIT_PARTICIPANTS) {
+    if (participants >= LIMIT_PARTICIPANTS) {
       throw new OverParticipationException();
     }
 
-    // TODO : circuit break
     SellerInfoForAuctionDto sellerInfo = sellerServiceFeignClient.getSellerInfoForCreateAuctionProduct(
         sellerId).getData();
 
