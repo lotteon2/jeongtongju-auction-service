@@ -77,6 +77,10 @@ public class BroadcastingService {
       throw new InvalidAuctionStatusException("이미 완료된 경매입니다.");
     }
 
+    if (auction.getAuctionProductList().isEmpty()) {
+      throw new EmptyAuctionProductException();
+    }
+
     List<BroadcastProductResponseDto> list = auction.getAuctionProductList()
         .stream()
         .map(BroadcastProductResponseDto::new)
