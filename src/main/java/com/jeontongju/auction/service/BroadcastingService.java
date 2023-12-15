@@ -154,10 +154,12 @@ public class BroadcastingService {
     Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
 
-    if (consumerId != null & !memberRoleEnum.equals(MemberRoleEnum.ROLE_ADMIN)) {
-      MemberDto memberDto = client.getConsumerInfo(consumerId).getData().to(consumerId);
-      ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
-      memberRedis.set(consumerId, memberDto, TTL, TimeUnit.HOURS);
+    if (consumerId != null & memberRoleEnum != null) {
+      if (!memberRoleEnum.equals(MemberRoleEnum.ROLE_ADMIN)) {
+        MemberDto memberDto = client.getConsumerInfo(consumerId).getData().to(consumerId);
+        ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
+        memberRedis.set(consumerId, memberDto, TTL, TimeUnit.HOURS);
+      }
     }
 
     return AuctionBroadcastResponseDto.of(auction);
