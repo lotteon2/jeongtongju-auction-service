@@ -19,6 +19,7 @@ import com.jeontongju.auction.dto.response.BroadcastProductResponseDto;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
 import com.jeontongju.auction.exception.AuctionProductNotFoundException;
+import com.jeontongju.auction.exception.EmptyAuctionProductException;
 import com.jeontongju.auction.exception.InvalidAuctionStatusException;
 import com.jeontongju.auction.exception.InvalidConsumerCreditException;
 import com.jeontongju.auction.exception.SameBidPriceException;
