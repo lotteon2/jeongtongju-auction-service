@@ -17,6 +17,7 @@ public class AuctionBidHistoryDto extends MemberDto {
   public static AuctionBidHistoryDto of(MemberDto memberDto, String auctionProductId, Long bidPrice) {
     return AuctionBidHistoryDto.builder()
         .memberId(memberDto.getMemberId())
+        .nickname(memberDto.getNickname())
         .profileImage(memberDto.getProfileImage())
         .auctionProductId(auctionProductId)
         .bidPrice(bidPrice)

@@ -44,6 +44,7 @@ public class BroadcastingController {
    * @param auctionBidRequestDto
    * @return
    */
+
   @PostMapping("/api/auction/bid")
   public ResponseEntity<ResponseFormat<Void>> bidProduct(
       @RequestHeader Long memberId,
@@ -89,7 +90,8 @@ public class BroadcastingController {
 
   @GetMapping("/api/auction/room/{auctionId}")
   public ResponseEntity<ResponseFormat<AuctionBroadcastResponseDto>> enterStreaming(
-      @RequestHeader Long consumerId, @RequestHeader MemberRoleEnum memberRole,
+      @RequestHeader(required = false) Long consumerId,
+      @RequestHeader(required = false) MemberRoleEnum memberRole,
       @PathVariable String auctionId) {
 
     return ResponseEntity.ok()
@@ -103,11 +105,11 @@ public class BroadcastingController {
         );
   }
 
-  @PatchMapping("/api/auction/bid/{auctionProductId}/askingPrice/{askingPrice}")
+  @PatchMapping("/api/auction/bid/{auctionId}/askingPrice/{askingPrice}")
   public ResponseEntity<ResponseFormat<Void>> modifyAskingPrice(
-      @PathVariable String auctionProductId, @PathVariable Long askingPrice
+      @PathVariable String auctionId, @PathVariable Long askingPrice
   ) {
-    broadcastingService.modifyAskingPrice(auctionProductId, askingPrice);
+    broadcastingService.modifyAskingPrice(auctionId, askingPrice);
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()
@@ -118,9 +120,9 @@ public class BroadcastingController {
         );
   }
 
-  @PostMapping("/api/auction/bid/{auctionProductId}")
-  public ResponseEntity<ResponseFormat<Void>> successfulBid(@PathVariable String auctionProductId) {
-    broadcastingService.successfulBid(auctionProductId);
+  @PostMapping("/api/auction/bid/{auctionId}")
+  public ResponseEntity<ResponseFormat<Void>> successfulBid(@PathVariable String auctionId) {
+    broadcastingService.successfulBid(auctionId);
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()

@@ -13,10 +13,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class  AuctionBidRequestDto {
   private String auctionId;
-  private String auctionProductId;
   private Long bidPrice;
 
-  public BidInfoHistory to(Long consumerId) {
+  public BidInfoHistory to(Long consumerId, String auctionProductId) {
     return BidInfoHistory.builder()
         .bidInfoHistoryId(
             BidInfoHistoryId.builder()

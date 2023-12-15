@@ -1,5 +1,9 @@
 package com.jeontongju.auction.service;
 
+import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.BID_CHAT;
+import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.BID_INFO;
+import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.CREATE_AUCTION_ORDER;
+
 import com.jeontongju.auction.client.ConsumerServiceFeignClient;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
@@ -11,6 +15,7 @@ import com.jeontongju.auction.dto.redis.AuctionBidHistoryDto;
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.request.ChatMessageDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
+import com.jeontongju.auction.dto.response.BroadcastProductResponseDto;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
 import com.jeontongju.auction.exception.AuctionProductNotFoundException;
@@ -59,10 +64,6 @@ public class BroadcastingService {
   private final KafkaTemplate<String, String> kafkaBidInfoTemplate;
   private final KafkaTemplate<String, AuctionOrderDto> kafkaOrderTemplate;
 
-  private static final String CHAT_TOPIC = "bid-chat-topic";
-  private static final String BID_FIN_TOPIC = "bid-info-topic";
-  private static final String AUCTION_ORDER_TOPIC = "auction-order-creation-topic";
-
   private final ConsumerServiceFeignClient client;
 
   public void startAuction(String auctionId) {
@@ -75,6 +76,19 @@ public class BroadcastingService {
     } else if (status.equals(AuctionStatusEnum.AFTER)) {
       throw new InvalidAuctionStatusException("이미 완료된 경매입니다.");
     }
+
+    List<BroadcastProductResponseDto> list = auction.getAuctionProductList()
+        .stream()
+        .map(BroadcastProductResponseDto::new)
+        .collect(Collectors.toList());
+
+    list.get(0).proceedProgress();
+
+    ValueOperations<String, List<BroadcastProductResponseDto>> auctionProductRedis = redisTemplate.opsForValue();
+    auctionProductRedis.set(auctionId, list, TTL);
+
+    ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
+    productIdx.set(auctionId + "_index", 1, TTL);
 
     auctionRepository.save(auction.toBuilder().status(AuctionStatusEnum.ING).build());
   }
@@ -94,6 +108,7 @@ public class BroadcastingService {
   }
 
   public void bidProduct(AuctionBidRequestDto auctionBidRequestDto, Long consumerId) {
+    String auctionId = auctionBidRequestDto.getAuctionId();
     // 1. 크레딧 검사
     ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
     MemberDto memberDto = memberRedis.get(consumerId);
@@ -104,7 +119,8 @@ public class BroadcastingService {
     }
 
     // 2. 동일 상품 + 동일 입찰가 데이터 검사
-    String auctionProductId = auctionBidRequestDto.getAuctionProductId();
+    String auctionProductId = getAuctionProductIdFromRedis(auctionId);
+
     Long bidPrice = auctionBidRequestDto.getBidPrice();
     bidInfoHistoryRepository.findById(BidInfoHistoryId.of(auctionProductId, bidPrice))
         .ifPresent(bidInfoHistory -> {
@@ -112,9 +128,10 @@ public class BroadcastingService {
         });
 
     // 3. DynamoDB 저장
-    bidInfoHistoryRepository.save(auctionBidRequestDto.to(consumerId));
+    bidInfoHistoryRepository.save(auctionBidRequestDto.to(consumerId, auctionProductId));
 
     // 4. 입찰 내역 저장
+    // TODO : Redis Util
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisTemplate.opsForZSet();
 
     AuctionBidHistoryDto historyDto = AuctionBidHistoryDto
@@ -124,7 +141,7 @@ public class BroadcastingService {
     redisTemplate.expire(auctionProductId, TTL, TimeUnit.HOURS);
 
     // 5. 입찰 완료 토픽 발행
-    kafkaBidInfoTemplate.send(BID_FIN_TOPIC, auctionProductId);
+    kafkaBidInfoTemplate.send(BID_INFO, auctionId);
   }
 
   public AuctionBroadcastResponseDto enterAuction(Long consumerId, MemberRoleEnum memberRoleEnum,
@@ -132,21 +149,28 @@ public class BroadcastingService {
     Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
 
-    if (!memberRoleEnum.equals(MemberRoleEnum.ROLE_ADMIN)) {
+    if (consumerId != null & !memberRoleEnum.equals(MemberRoleEnum.ROLE_ADMIN)) {
       MemberDto memberDto = client.getConsumerInfo(consumerId).getData().to(consumerId);
       ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
       memberRedis.set(consumerId, memberDto, TTL, TimeUnit.HOURS);
     }
 
-    return AuctionBroadcastResponseDto.of(auction, consumerId);
+    return AuctionBroadcastResponseDto.of(auction);
   }
 
-  public void modifyAskingPrice(String auctionProductId, Long askingPrice) {
+  public void modifyAskingPrice(String auctionId, Long askingPrice) {
+    String auctionProductId = getAuctionProductIdFromRedis(auctionId);
+
     ValueOperations<String, Long> askingPriceRedis = redisTemplate.opsForValue();
     askingPriceRedis.set("asking_price_" + auctionProductId, askingPrice, TTL, TimeUnit.HOURS);
+
+    kafkaBidInfoTemplate.send(BID_INFO, auctionId);
   }
 
-  public void successfulBid(String auctionProductId) {
+  public void successfulBid(String auctionId) {
+    List<BroadcastProductResponseDto> productList = getAuctionProductListFromRedis(auctionId);
+    String auctionProductId = getAuctionProductIdFromRedis(auctionId);
+
     // 1. 경매 물품 입찰 내역 조회
     List<BidInfoHistory> bidInfoHistoryList = bidInfoHistoryRepository
         .findByAuctionProductId(auctionProductId);
@@ -162,7 +186,7 @@ public class BroadcastingService {
 
     // 4. RDB 내역 저장
     Auction auction = auctionRepository.findById(successfulBid.getAuctionId())
-        .orElseThrow(AbstractMethodError::new);
+        .orElseThrow(AuctionNotFoundException::new);
     AuctionProduct auctionProduct = auctionProductRepository.findById(auctionProductId)
         .orElseThrow(AuctionProductNotFoundException::new);
 
@@ -172,18 +196,31 @@ public class BroadcastingService {
     bidInfoRepository.saveAll(list);
 
     // 5. 주문 카프카 발행
-    kafkaOrderTemplate.send(AUCTION_ORDER_TOPIC, AuctionOrderDto.of(
-        successfulBid.getConsumerId(), successfulBid.getBidPrice(),
-        auctionProductId, auctionProduct.getName(),
-        successfulBid.getBidPrice(), auctionProduct.getSellerId(),
-        auctionProduct.getStoreName(), auctionProduct.getStoreImageUrl()
-    ));
+    kafkaOrderTemplate.send(
+        CREATE_AUCTION_ORDER,
+        AuctionOrderDto.of(
+            successfulBid.getConsumerId(), successfulBid.getBidPrice(),
+            auctionProductId, auctionProduct.getName(),
+            successfulBid.getBidPrice(), auctionProduct.getSellerId(),
+            auctionProduct.getStoreName(), auctionProduct.getStoreImageUrl()
+        )
+    );
 
     // 6. 입찰 내역 삭제
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisTemplate.opsForZSet();
     bidHistoryRedis.remove(auctionProductId);
     redisTemplate.delete("asking_price_" + auctionProductId);
-    kafkaBidInfoTemplate.send(BID_FIN_TOPIC, auctionProductId);
+
+    // 7. 진행도 다음으로 수정
+    ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
+    int index = productIdx.get(auctionId + "_index");
+
+    productList.get(index).closeProgress();
+    if (index < productList.size() - 1) {
+      productList.get(index + 1).proceedProgress();
+    }
+
+    kafkaBidInfoTemplate.send(BID_INFO, auctionId);
   }
 
   public void sendMessageToKafka(ChatMessageDto message, String auctionId) {
@@ -195,17 +232,20 @@ public class BroadcastingService {
       ValueOperations<Long, MemberDto> memberRedis = redisTemplate.opsForValue();
       memberDto = memberRedis.get(message.getMemberId());
     }
-    kafkaChatTemplate.send(CHAT_TOPIC,
+    kafkaChatTemplate.send(BID_CHAT,
         KafkaChatMessageDto.toKafkaChatMessageDto(message, memberDto, auctionId));
   }
 
-  @KafkaListener(topics = CHAT_TOPIC)
+  @KafkaListener(topics = BID_CHAT)
   public void subMessage(KafkaChatMessageDto message) {
     template.convertAndSend("/sub/chat/" + message.getAuctionId(), message);
   }
 
-  @KafkaListener(topics = BID_FIN_TOPIC)
-  public void subBidInfo(String auctionProductId) {
+  @KafkaListener(topics = BID_INFO)
+  public void subBidInfo(String auctionId) {
+    List<BroadcastProductResponseDto> productList = getAuctionProductListFromRedis(auctionId);
+    String auctionProductId = getAuctionProductIdFromRedis(auctionId);
+
     // 경매 상품 입찰 내역 조회
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisTemplate.opsForZSet();
     List<AuctionBidHistoryDto> list = new ArrayList<>(
@@ -220,7 +260,19 @@ public class BroadcastingService {
     Long askingPrice = askingPriceRedis.get("asking_price_" + auctionProductId);
 
     // 입찰 내역, 호가 전달
-    template.convertAndSend("/sub/bid-info/" + KafkaAuctionBidHistoryDto.of(list, askingPrice));
+    template.convertAndSend(
+        "/sub/bid-info/" + KafkaAuctionBidHistoryDto.of(list, productList, askingPrice));
+  }
+
+  private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {
+    ValueOperations<String, List<BroadcastProductResponseDto>> auctionProductRedis = redisTemplate.opsForValue();
+    return auctionProductRedis.get(auctionId);
+  }
+
+  private String getAuctionProductIdFromRedis(String auctionId) {
+    ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
+    return getAuctionProductListFromRedis(auctionId).get(productIdx.get(auctionId + "_index"))
+        .getAuctionProductId();
   }
 
   private List<BidInfo> convert(List<BidInfoHistory> list, Auction auction,

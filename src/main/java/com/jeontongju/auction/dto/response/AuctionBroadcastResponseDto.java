@@ -1,6 +1,7 @@
 package com.jeontongju.auction.dto.response;
 
 import com.jeontongju.auction.domain.Auction;
+import com.jeontongju.auction.enums.AuctionStatusEnum;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -13,20 +14,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuctionBroadcastResponseDto {
-  private Long memberId;
-  private String auctionId;
-  private List<BroadcastProductResponseDto> auctionProductList;
+  private String auctionName;
+  private AuctionStatusEnum status;
 
-  public static AuctionBroadcastResponseDto of(Auction auction, Long memberId) {
+  public static AuctionBroadcastResponseDto of(Auction auction) {
     return AuctionBroadcastResponseDto.builder()
-        .memberId(memberId)
-        .auctionId(auction.getAuctionId())
-        .auctionProductList(
-            auction.getAuctionProductList()
-                .stream()
-                .map(BroadcastProductResponseDto::new)
-                .collect(Collectors.toList())
-        )
+        .auctionName(auction.getTitle())
+        .status(auction.getStatus())
         .build();
   }
 }
