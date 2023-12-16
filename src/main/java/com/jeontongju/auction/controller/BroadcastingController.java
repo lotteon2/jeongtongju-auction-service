@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,25 +27,17 @@ public class BroadcastingController {
 
   private final BroadcastingService broadcastingService;
 
-  /**
-   * 라이브 경매 채팅
-   *
-   * @param message
-   * @param auctionId
-   */
   @MessageMapping("/chat/{auctionId}")
   public void pubMessage(ChatMessageDto message,
       @DestinationVariable("auctionId") String auctionId) {
     broadcastingService.sendMessageToKafka(message, auctionId);
   }
 
-  /**
-   * 라이브 경매 입찰
-   *
-   * @param memberId
-   * @param auctionBidRequestDto
-   * @return
-   */
+  @SubscribeMapping("/bid-info/{auctionId}")
+  public void pubInitBidInfo(@DestinationVariable("auctionId") String auctionId, SimpMessageHeaderAccessor headerAccessor) {
+    String sessionId = headerAccessor.getSessionId();
+    broadcastingService.pubBidInfo(sessionId, auctionId);
+  }
 
   @PostMapping("/api/auction/bid")
   public ResponseEntity<ResponseFormat<Void>> bidProduct(

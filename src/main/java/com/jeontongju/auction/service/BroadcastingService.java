@@ -9,8 +9,8 @@ import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
 import com.jeontongju.auction.domain.BidInfoHistory;
-import com.jeontongju.auction.dto.kafka.KafkaAuctionBidHistoryDto;
-import com.jeontongju.auction.dto.kafka.KafkaChatMessageDto;
+import com.jeontongju.auction.dto.socket.KafkaAuctionBidHistoryDto;
+import com.jeontongju.auction.dto.socket.KafkaChatMessageDto;
 import com.jeontongju.auction.dto.redis.AuctionBidHistoryDto;
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.request.ChatMessageDto;
@@ -244,18 +244,30 @@ public class BroadcastingService {
   }
 
   @KafkaListener(topics = BID_CHAT)
-  public void subMessage(KafkaChatMessageDto message) {
+  public void pubMessage(KafkaChatMessageDto message) {
     template.convertAndSend("/sub/chat/" + message.getAuctionId(), message);
   }
 
   @KafkaListener(topics = BID_INFO)
-  public void subBidInfo(String auctionId) {
+  public void pubBidInfo(String auctionId) {
+    // 입찰 내역, 호가 전달
+    template.convertAndSend("/sub/bid-info/" + auctionId, getPublishingBidHistory(auctionId));
+  }
+
+  public void pubBidInfo(String sessionId, String auctionId) {
+    template.convertAndSendToUser(
+        sessionId, "/sub/bid-info/" + auctionId,
+        getPublishingBidHistory(auctionId)
+    );
+  }
+
+  public KafkaAuctionBidHistoryDto getPublishingBidHistory(String auctionId) {
     List<BroadcastProductResponseDto> productList = getAuctionProductListFromRedis(auctionId);
     String auctionProductId = getAuctionProductIdFromRedis(auctionId);
 
     // 경매 상품 입찰 내역 조회
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisTemplate.opsForZSet();
-    List<AuctionBidHistoryDto> list = new ArrayList<>(
+    List<AuctionBidHistoryDto> bidHistoryList = new ArrayList<>(
         Objects.requireNonNullElse(
             bidHistoryRedis.reverseRange(auctionProductId, 0, -1),
             Collections.emptyList()
@@ -266,9 +278,7 @@ public class BroadcastingService {
     ValueOperations<String, Long> askingPriceRedis = redisTemplate.opsForValue();
     Long askingPrice = askingPriceRedis.get("asking_price_" + auctionProductId);
 
-    // 입찰 내역, 호가 전달
-    template.convertAndSend(
-        "/sub/bid-info/" + KafkaAuctionBidHistoryDto.of(list, productList, askingPrice));
+    return KafkaAuctionBidHistoryDto.of(bidHistoryList, productList, askingPrice);
   }
 
   private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {

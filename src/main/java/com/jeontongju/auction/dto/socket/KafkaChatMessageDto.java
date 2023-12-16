@@ -1,4 +1,4 @@
-package com.jeontongju.auction.dto.kafka;
+package com.jeontongju.auction.dto.socket;
 
 import com.jeontongju.auction.dto.request.ChatMessageDto;
 import io.github.bitbox.bitbox.dto.MemberDto;

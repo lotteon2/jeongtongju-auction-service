@@ -1,4 +1,4 @@
-package com.jeontongju.auction.dto.kafka;
+package com.jeontongju.auction.dto.socket;
 
 import com.jeontongju.auction.dto.redis.AuctionBidHistoryDto;
 import com.jeontongju.auction.dto.response.BroadcastProductResponseDto;
