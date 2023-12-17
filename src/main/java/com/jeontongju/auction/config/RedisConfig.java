@@ -31,11 +31,20 @@ public class RedisConfig {
     return new LettuceConnectionFactory(redisStandaloneConfiguration);
   }
 
-  @Bean
+  @Bean(name = "redisStringTemplate")
   public RedisTemplate<String, Object> redisTemplate() {
     RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
     redisTemplate.setConnectionFactory(redisConnectionFactory());
-    redisTemplate.setKeySerializer(new GenericJackson2JsonRedisSerializer());
+    redisTemplate.setKeySerializer(new StringRedisSerializer());
+    redisTemplate.setValueSerializer(new StringRedisSerializer());
+    return redisTemplate;
+  }
+
+  @Bean(name = "redisGenericTemplate")
+  public RedisTemplate<String, Object> redisListTemplate() {
+    RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
+    redisTemplate.setConnectionFactory(redisConnectionFactory());
+    redisTemplate.setKeySerializer(new StringRedisSerializer());
     redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
     return redisTemplate;
   }

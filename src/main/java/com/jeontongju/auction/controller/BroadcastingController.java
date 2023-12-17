@@ -84,7 +84,7 @@ public class BroadcastingController {
 
   @GetMapping("/api/auction/room/{auctionId}")
   public ResponseEntity<ResponseFormat<AuctionBroadcastResponseDto>> enterStreaming(
-      @RequestHeader(required = false) Long consumerId,
+      @RequestHeader(required = false) Long memberId,
       @RequestHeader(required = false) MemberRoleEnum memberRole,
       @PathVariable String auctionId) {
 
@@ -94,7 +94,7 @@ public class BroadcastingController {
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 방 입장 성공")
-                .data(broadcastingService.enterAuction(consumerId, memberRole, auctionId))
+                .data(broadcastingService.enterAuction(memberId, memberRole, auctionId))
                 .build()
         );
   }
