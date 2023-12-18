@@ -47,6 +47,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -88,15 +89,15 @@ public class BroadcastingService {
       throw new EmptyAuctionProductException();
     }
 
-    List<BroadcastProductResponseDto> list = auction.getAuctionProductList()
+    List<BroadcastProductResponseDto> productList = auction.getAuctionProductList()
         .stream()
         .map(BroadcastProductResponseDto::new)
         .collect(Collectors.toList());
 
-    list.get(0).proceedProgress();
+    productList.get(0).proceedProgress();
 
     ValueOperations<String, List<BroadcastProductResponseDto>> auctionProductRedis = redisGenericTemplate.opsForValue();
-    auctionProductRedis.set("auction_id_" + auctionId, list, TTL, TimeUnit.HOURS);
+    auctionProductRedis.set("auction_id_" + auctionId, productList, TTL, TimeUnit.HOURS);
 
     ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
     productIdx.set(auctionId + "_index", 0, TTL, TimeUnit.HOURS);
@@ -180,6 +181,7 @@ public class BroadcastingService {
     kafkaBidInfoTemplate.send(BID_INFO, auctionId);
   }
 
+  @Transactional
   public void successfulBid(String auctionId) {
     List<BroadcastProductResponseDto> productList = getAuctionProductListFromRedis(auctionId);
     String auctionProductId = getAuctionProductIdFromRedis(auctionId);
@@ -232,6 +234,9 @@ public class BroadcastingService {
     if (index < productList.size() - 1) {
       productList.get(index + 1).proceedProgress();
     }
+
+    ValueOperations<String, List<BroadcastProductResponseDto>> auctionProductRedis = redisGenericTemplate.opsForValue();
+    auctionProductRedis.set("auction_id_" + auctionId, productList, TTL, TimeUnit.HOURS);
 
     kafkaBidInfoTemplate.send(BID_INFO, auctionId);
   }
