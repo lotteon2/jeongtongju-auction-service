@@ -99,7 +99,7 @@ public class BroadcastingService {
     auctionProductRedis.set("auction_id_" + auctionId, list, TTL, TimeUnit.HOURS);
 
     ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
-    productIdx.set(auctionId + "_index", 1, TTL, TimeUnit.HOURS);
+    productIdx.set(auctionId + "_index", 0, TTL, TimeUnit.HOURS);
 
     auctionRepository.save(auction.toBuilder().status(AuctionStatusEnum.ING).build());
   }
