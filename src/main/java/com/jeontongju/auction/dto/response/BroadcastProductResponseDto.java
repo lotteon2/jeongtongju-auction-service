@@ -22,4 +22,12 @@ public class BroadcastProductResponseDto {
     this.auctionProductId = auctionProduct.getAuctionProductId();
     this.auctionProductName = auctionProduct.getName();
   }
+
+  public void proceedProgress() {
+    this.progress = BroadcastProgressEnum.ING;
+  }
+
+  public void closeProgress() {
+    this.progress = BroadcastProgressEnum.AFTER;
+  }
 }

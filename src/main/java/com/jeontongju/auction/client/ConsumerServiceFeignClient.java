@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(name = "consumer-service")
 public interface ConsumerServiceFeignClient {
-  @GetMapping("/consumers/{consumerId}/name-image")
+  @GetMapping("/consumers/{consumerId}/auction")
   FeignFormat<ConsumerInfoDto> getConsumerInfo(@PathVariable Long consumerId);
   @PatchMapping("/consumers/{consumerId}/credit/{deductionCredit}")
   FeignFormat<Boolean> deductCredit(@PathVariable Long consumerId, @PathVariable Long deductionCredit);

@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,25 +27,18 @@ public class BroadcastingController {
 
   private final BroadcastingService broadcastingService;
 
-  /**
-   * 라이브 경매 채팅
-   *
-   * @param message
-   * @param auctionId
-   */
   @MessageMapping("/chat/{auctionId}")
   public void pubMessage(ChatMessageDto message,
       @DestinationVariable("auctionId") String auctionId) {
     broadcastingService.sendMessageToKafka(message, auctionId);
   }
 
-  /**
-   * 라이브 경매 입찰
-   *
-   * @param memberId
-   * @param auctionBidRequestDto
-   * @return
-   */
+  @SubscribeMapping("/bid-info/{auctionId}")
+  public void pubInitBidInfo(@DestinationVariable("auctionId") String auctionId, SimpMessageHeaderAccessor headerAccessor) {
+    String sessionId = headerAccessor.getSessionId();
+    broadcastingService.pubBidInfo(sessionId, auctionId);
+  }
+
   @PostMapping("/api/auction/bid")
   public ResponseEntity<ResponseFormat<Void>> bidProduct(
       @RequestHeader Long memberId,
@@ -89,7 +84,8 @@ public class BroadcastingController {
 
   @GetMapping("/api/auction/room/{auctionId}")
   public ResponseEntity<ResponseFormat<AuctionBroadcastResponseDto>> enterStreaming(
-      @RequestHeader Long consumerId, @RequestHeader MemberRoleEnum memberRole,
+      @RequestHeader(required = false) Long memberId,
+      @RequestHeader(required = false) MemberRoleEnum memberRole,
       @PathVariable String auctionId) {
 
     return ResponseEntity.ok()
@@ -98,16 +94,16 @@ public class BroadcastingController {
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 방 입장 성공")
-                .data(broadcastingService.enterAuction(consumerId, memberRole, auctionId))
+                .data(broadcastingService.enterAuction(memberId, memberRole, auctionId))
                 .build()
         );
   }
 
-  @PatchMapping("/api/auction/bid/{auctionProductId}/askingPrice/{askingPrice}")
+  @PatchMapping("/api/auction/bid/{auctionId}/askingPrice/{askingPrice}")
   public ResponseEntity<ResponseFormat<Void>> modifyAskingPrice(
-      @PathVariable String auctionProductId, @PathVariable Long askingPrice
+      @PathVariable String auctionId, @PathVariable Long askingPrice
   ) {
-    broadcastingService.modifyAskingPrice(auctionProductId, askingPrice);
+    broadcastingService.modifyAskingPrice(auctionId, askingPrice);
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()
@@ -118,9 +114,9 @@ public class BroadcastingController {
         );
   }
 
-  @PostMapping("/api/auction/bid/{auctionProductId}")
-  public ResponseEntity<ResponseFormat<Void>> successfulBid(@PathVariable String auctionProductId) {
-    broadcastingService.successfulBid(auctionProductId);
+  @PostMapping("/api/auction/bid/{auctionId}")
+  public ResponseEntity<ResponseFormat<Void>> successfulBid(@PathVariable String auctionId) {
+    broadcastingService.successfulBid(auctionId);
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()

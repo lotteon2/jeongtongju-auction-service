@@ -2,6 +2,7 @@ package com.jeontongju.auction.exception.advice;
 
 import com.jeontongju.auction.enums.ResponseEnum;
 import com.jeontongju.auction.exception.DuplicateSellerRegisterProductException;
+import com.jeontongju.auction.exception.EmptyAuctionProductException;
 import com.jeontongju.auction.exception.InvalidAuctionStatusException;
 import com.jeontongju.auction.exception.InvalidConsumerCreditException;
 import com.jeontongju.auction.exception.OverParticipationException;
@@ -15,6 +16,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -27,6 +29,42 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
 
   private static final String UNIQUE_CONSTRAINT_EXCEPTION_MESSAGE = "유니크 제약조건 오류 ";
   private static final String DUPLICATE_KEY_EXCEPTION_MESSAGE = "중복 키 오류 ";
+  private static final String SOCKET_TRANSFER_EXCEPTION_MESSAGE = "소켓 통신 중 오류";
+
+  @Override
+  protected ResponseEntity<Object> handleMethodArgumentNotValid(
+      MethodArgumentNotValidException e,
+      HttpHeaders headers,
+      HttpStatus status,
+      WebRequest request) {
+
+    return ResponseEntity
+        .status(status.value())
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(status.value())
+                .message(status.name())
+                .detail(
+                    e.getBindingResult().getFieldError() == null
+                        ? e.getMessage()
+                        : e.getBindingResult().getFieldError().getDefaultMessage())
+                .build()
+        );
+  }
+
+  @MessageExceptionHandler
+  public ResponseEntity<ResponseFormat<Void>> handleMessageException(Exception e) {
+    HttpStatus status = HttpStatus.BAD_REQUEST;
+    return ResponseEntity
+        .status(status)
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(status.value())
+                .message(status.name())
+                .detail(SOCKET_TRANSFER_EXCEPTION_MESSAGE)
+                .build()
+        );
+  }
 
   @ExceptionHandler(DuplicateKeyException.class)
   public ResponseEntity<ResponseFormat<Void>> handleDuplicateKeyException(DuplicateKeyException e) {
@@ -70,27 +108,6 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
                 .code(status.value())
                 .message(status.name())
                 .detail(e.getMessage())
-                .build()
-        );
-  }
-
-  @Override
-  protected ResponseEntity<Object> handleMethodArgumentNotValid(
-      MethodArgumentNotValidException e,
-      HttpHeaders headers,
-      HttpStatus status,
-      WebRequest request) {
-
-    return ResponseEntity
-        .status(status.value())
-        .body(
-            ResponseFormat.<Void>builder()
-                .code(status.value())
-                .message(status.name())
-                .detail(
-                    e.getBindingResult().getFieldError() == null
-                        ? e.getMessage()
-                        : e.getBindingResult().getFieldError().getDefaultMessage())
                 .build()
         );
   }
@@ -177,6 +194,22 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
   @ExceptionHandler(DuplicateSellerRegisterProductException.class)
   public ResponseEntity<ResponseFormat<Void>> handleAlreadyRegisteredProductException(
       DuplicateSellerRegisterProductException e
+  ) {
+    HttpStatus status = HttpStatus.BAD_REQUEST;
+    return ResponseEntity
+        .status(status)
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(status.value())
+                .message(status.name())
+                .detail(e.getMessage())
+                .build()
+        );
+  }
+
+  @ExceptionHandler(EmptyAuctionProductException.class)
+  public ResponseEntity<ResponseFormat<Void>> handleEmptyAuctionProductException(
+      EmptyAuctionProductException e
   ) {
     HttpStatus status = HttpStatus.BAD_REQUEST;
     return ResponseEntity
