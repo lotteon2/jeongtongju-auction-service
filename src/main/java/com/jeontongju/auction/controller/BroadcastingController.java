@@ -71,7 +71,10 @@ public class BroadcastingController {
   public ResponseEntity<ResponseFormat<Void>> endStreaming(
       @PathVariable String auctionId
   ) {
-    broadcastingService.endAuction(auctionId);
+    /**
+     * 임시 테스트용 END X
+     */
+//    broadcastingService.endAuction(auctionId);
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()
