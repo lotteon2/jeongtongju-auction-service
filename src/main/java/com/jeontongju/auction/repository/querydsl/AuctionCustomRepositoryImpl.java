@@ -81,6 +81,14 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
         .fetchOne();
   }
 
+  @Override
+  public Long countByAuctionProductIsAllowed() {
+    return jpaQueryFactory.select(auctionProduct.count())
+        .from(auctionProduct)
+        .where(auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW))
+        .fetchOne();
+  }
+
   private LocalDate getTargetAuctionDate(LocalDate today, DayOfWeek dayOfWeek) {
     if (today.getDayOfWeek().compareTo(dayOfWeek) <= 0) {
       return today.with(DayOfWeek.FRIDAY);

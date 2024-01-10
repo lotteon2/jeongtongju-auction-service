@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
@@ -269,6 +270,19 @@ public class AuctionServiceTest {
     assertThrows(DuplicateSellerRegisterProductException.class,
         () -> auctionService.registerAuctionProduct(request, 1L));
 
+  }
+
+  @Test
+  @DisplayName("허용된 경매 상품 수")
+  void getAllowProducts() {
+    initProductList = init.initAuctionProduct(initAuction);
+    auctionProductRepository.saveAll(initProductList);
+
+    entityManager.flush();
+    entityManager.clear();
+
+    Long count = auctionService.getAllowProductCount();
+    assertTrue(count != 0);
   }
 
 }
