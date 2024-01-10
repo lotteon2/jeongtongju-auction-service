@@ -236,6 +236,10 @@ public class AuctionService {
     return toPage(result, pageable);
   }
 
+  public Long getAllowProductCount() {
+    return auctionRepository.countByAuctionProductIsAllowed();
+  }
+
 
   <T> Page<T> toPage(List<T> list, Pageable pageable) {
     List<T> pageList = list.stream()
