@@ -91,7 +91,7 @@ public class BroadcastingService {
 
     List<BroadcastProductResponseDto> productList = auction.getAuctionProductList()
         .stream()
-        .map(BroadcastProductResponseDto::new)
+        .map(BroadcastProductResponseDto::to)
         .collect(Collectors.toList());
 
     productList.get(0).proceedProgress();

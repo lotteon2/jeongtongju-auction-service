@@ -14,13 +14,17 @@ import lombok.NoArgsConstructor;
 public class BroadcastProductResponseDto {
   private String auctionProductId;
   private String auctionProductName;
+  private Long startingPrice;
 
   @Builder.Default
   private BroadcastProgressEnum progress = BroadcastProgressEnum.BEFORE;
 
-  public BroadcastProductResponseDto(AuctionProduct auctionProduct) {
-    this.auctionProductId = auctionProduct.getAuctionProductId();
-    this.auctionProductName = auctionProduct.getName();
+  public static BroadcastProductResponseDto to(AuctionProduct auctionProduct) {
+    return BroadcastProductResponseDto.builder()
+        .auctionProductId(auctionProduct.getAuctionProductId())
+        .auctionProductName(auctionProduct.getName())
+        .startingPrice(auctionProduct.getStartingPrice())
+        .build();
   }
 
   public void proceedProgress() {
