@@ -256,6 +256,7 @@ public class BroadcastingService {
 
   @KafkaListener(topics = BID_CHAT)
   public void pubMessage(KafkaChatMessageDto message) {
+    log.info("message : {}", message.getMessage());
     template.convertAndSend("/sub/chat/" + message.getAuctionId(), message);
   }
 
