@@ -266,7 +266,9 @@ public class BroadcastingService {
     template.convertAndSend("/sub/bid-info/" + auctionId, getPublishingBidHistory(auctionId));
   }
 
-  public void pubBidInfo(String sessionId, String auctionId) {
+  public void pubBidInfoWhenSocketConnect(String sessionId) {
+    String auctionId = auctionRepository.findThisAuction().orElseThrow(AuctionNotFoundException::new).getAuctionId();
+
     template.convertAndSendToUser(
         sessionId, "/sub/bid-info/" + auctionId,
         getPublishingBidHistory(auctionId)
@@ -288,7 +290,7 @@ public class BroadcastingService {
 
     // 경매 상품 호가 조회
     ValueOperations<String, Long> askingPriceRedis = redisTemplate.opsForValue();
-    Long askingPrice = askingPriceRedis.get("asking_price_" + auctionProductId);
+    Long askingPrice = Objects.requireNonNullElse(askingPriceRedis.get("asking_price_" + auctionProductId), 0L);
 
     return KafkaAuctionBidHistoryDto.of(bidHistoryList, productList, askingPrice);
   }

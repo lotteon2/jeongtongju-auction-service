@@ -39,12 +39,6 @@ public class BroadcastingController {
     broadcastingService.sendMessageToKafka(message, auctionId);
   }
 
-  @SubscribeMapping("/bid-info/{auctionId}")
-  public void pubInitBidInfo(@DestinationVariable("auctionId") String auctionId, SimpMessageHeaderAccessor headerAccessor) {
-    String sessionId = headerAccessor.getSessionId();
-    broadcastingService.pubBidInfo(sessionId, auctionId);
-  }
-
   @PostMapping("/api/auction/bid")
   public ResponseEntity<ResponseFormat<Void>> bidProduct(
       @RequestHeader Long memberId,
@@ -135,11 +129,10 @@ public class BroadcastingController {
 
   @EventListener
   public void connectEvent(SessionConnectEvent sessionConnectEvent){
-    StompHeaderAccessor headers = StompHeaderAccessor.wrap(sessionConnectEvent.getMessage());
-
-    String sessionId = headers.getSessionId();
     log.info("연결 성공, {}", sessionConnectEvent);
-    log.info("세션 ID {}", sessionId);
+    StompHeaderAccessor headers = StompHeaderAccessor.wrap(sessionConnectEvent.getMessage());
+    String sessionId = headers.getSessionId();
+    broadcastingService.pubBidInfoWhenSocketConnect(sessionId);
   }
 
   @EventListener
