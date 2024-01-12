@@ -15,6 +15,7 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -134,7 +135,11 @@ public class BroadcastingController {
 
   @EventListener
   public void connectEvent(SessionConnectEvent sessionConnectEvent){
+    StompHeaderAccessor headers = StompHeaderAccessor.wrap(sessionConnectEvent.getMessage());
+
+    String sessionId = headers.getSessionId();
     log.info("연결 성공, {}", sessionConnectEvent);
+    log.info("세션 ID {}", sessionId);
   }
 
   @EventListener

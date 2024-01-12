@@ -217,7 +217,8 @@ public class BroadcastingService {
             successfulBid.getConsumerId(), successfulBid.getBidPrice(),
             auctionProductId, auctionProduct.getName(),
             successfulBid.getBidPrice(), auctionProduct.getSellerId(),
-            auctionProduct.getStoreName(), auctionProduct.getStoreImageUrl()
+            auctionProduct.getStoreName(), auctionProduct.getStoreImageUrl(),
+            1L
         )
     );
 
