@@ -222,8 +222,7 @@ public class BroadcastingService {
     );
 
     // 6. 입찰 내역 삭제
-    ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
-    bidHistoryRedis.remove("auction_product_id" + auctionProductId);
+    redisTemplate.delete("auction_product_id" + auctionProductId);
     redisTemplate.delete("asking_price_" + auctionProductId);
 
     // 7. 진행도 다음으로 수정
