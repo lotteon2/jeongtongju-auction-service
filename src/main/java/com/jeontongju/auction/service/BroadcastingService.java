@@ -62,7 +62,7 @@ public class BroadcastingService {
   @Qualifier("redisStringTemplate")
   private final RedisTemplate redisTemplate;
 
-  @Qualifier("redisStringTemplate")
+  @Qualifier("redisGenericTemplate")
   private final RedisTemplate redisGenericTemplate;
 
   private static final Long TTL = 6L;
