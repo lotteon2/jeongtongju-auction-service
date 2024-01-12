@@ -1,6 +1,5 @@
 package com.jeontongju.auction.exception.advice;
 
-import com.jeontongju.auction.enums.ResponseEnum;
 import com.jeontongju.auction.exception.DuplicateSellerRegisterProductException;
 import com.jeontongju.auction.exception.EmptyAuctionProductException;
 import com.jeontongju.auction.exception.InvalidAuctionStatusException;
@@ -10,6 +9,7 @@ import com.jeontongju.auction.exception.SameBidPriceException;
 import com.jeontongju.auction.exception.SameWeekOfAuctionException;
 import com.jeontongju.auction.exception.common.EntityNotFoundException;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
+import io.github.bitbox.bitbox.enums.FailureTypeEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
@@ -122,7 +122,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
                 .code(status.value())
                 .message(status.name())
                 .detail(e.getMessage())
-                .failure(ResponseEnum.OVER_PARTICIPATION.name())
+                .failure(FailureTypeEnum.OVER_PARTICIPATION)
                 .build()
         );
   }
