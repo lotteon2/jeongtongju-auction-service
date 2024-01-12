@@ -31,13 +31,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         .withSockJS();
   }
 
-  @EventListener
-  public void connectEvent(SessionConnectEvent sessionConnectEvent){
-    log.info("연결 성공, {}", sessionConnectEvent);
-  }
-
-  @EventListener
-  public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
-    log.info("연결 해제, {}", sessionDisconnectEvent);
-  }
+//  @EventListener
+//  public void connectEvent(SessionConnectEvent sessionConnectEvent){
+//    log.info("연결 성공, {}", sessionConnectEvent);
+//  }
+//
+//  @EventListener
+//  public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
+//    log.info("연결 해제, {}", sessionDisconnectEvent);
+//  }
 }

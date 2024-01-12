@@ -7,6 +7,8 @@ import com.jeontongju.auction.service.BroadcastingService;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -20,7 +22,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.socket.messaging.SessionConnectEvent;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class BroadcastingController {
@@ -125,5 +130,15 @@ public class BroadcastingController {
                 .detail("경매 낙찰 성공")
                 .build()
         );
+  }
+
+  @EventListener
+  public void connectEvent(SessionConnectEvent sessionConnectEvent){
+    log.info("연결 성공, {}", sessionConnectEvent);
+  }
+
+  @EventListener
+  public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
+    log.info("연결 해제, {}", sessionDisconnectEvent);
   }
 }
