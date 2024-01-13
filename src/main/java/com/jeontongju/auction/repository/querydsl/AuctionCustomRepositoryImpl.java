@@ -82,10 +82,10 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
   }
 
   @Override
-  public Long countByAuctionProductIsAllowed() {
+  public Long countByAuctionProductIsWait() {
     return jpaQueryFactory.select(auctionProduct.count())
         .from(auctionProduct)
-        .where(auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW))
+        .where(auctionProduct.status.eq(AuctionProductStatusEnum.WAIT))
         .fetchOne();
   }
 

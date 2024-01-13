@@ -237,7 +237,7 @@ public class AuctionService {
   }
 
   public Long getAllowProductCount() {
-    return auctionRepository.countByAuctionProductIsAllowed();
+    return auctionRepository.countByAuctionProductIsWait();
   }
 
 
