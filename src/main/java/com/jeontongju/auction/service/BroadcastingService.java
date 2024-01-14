@@ -254,6 +254,10 @@ public class BroadcastingService {
         KafkaChatMessageDto.toKafkaChatMessageDto(message, memberDto, auctionId));
   }
 
+  public void sendFirstConnectToKafka(String sessionId) {
+    kafkaBidInfoTemplate.send("bid-info-connect", sessionId);
+  }
+
   @KafkaListener(topics = BID_CHAT)
   public void pubMessage(KafkaChatMessageDto message) {
     log.info("message : {}", message.getMessage());
@@ -266,9 +270,10 @@ public class BroadcastingService {
     template.convertAndSend("/sub/bid-info/" + auctionId, getPublishingBidHistory(auctionId));
   }
 
+  @KafkaListener(topics = "bid-info-connect")
   public void pubBidInfoWhenSocketConnect(String sessionId) {
     String auctionId = auctionRepository.findThisAuction().orElseThrow(AuctionNotFoundException::new).getAuctionId();
-
+    log.info("first-connect, sessionId : {}", sessionId);
     template.convertAndSendToUser(
         sessionId, "/sub/bid-info/" + auctionId,
         getPublishingBidHistory(auctionId)

@@ -132,7 +132,8 @@ public class BroadcastingController {
     log.info("연결 성공, {}", sessionConnectEvent);
     StompHeaderAccessor headers = StompHeaderAccessor.wrap(sessionConnectEvent.getMessage());
     String sessionId = headers.getSessionId();
-    broadcastingService.pubBidInfoWhenSocketConnect(sessionId);
+//    broadcastingService.pubBidInfoWhenSocketConnect(sessionId);
+    broadcastingService.sendFirstConnectToKafka(sessionId);
   }
 
   @EventListener
