@@ -3,6 +3,7 @@ package com.jeontongju.auction.controller;
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.request.ChatMessageDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
+import com.jeontongju.auction.dto.socket.KafkaAuctionBidHistoryDto;
 import com.jeontongju.auction.service.BroadcastingService;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
@@ -71,7 +73,7 @@ public class BroadcastingController {
   public ResponseEntity<ResponseFormat<Void>> endStreaming(
       @PathVariable String auctionId
   ) {
-    
+
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()
@@ -127,17 +129,34 @@ public class BroadcastingController {
         );
   }
 
-  @EventListener
-  public void connectEvent(SessionConnectEvent sessionConnectEvent){
-    log.info("연결 성공, {}", sessionConnectEvent);
-    StompHeaderAccessor headers = StompHeaderAccessor.wrap(sessionConnectEvent.getMessage());
-    String sessionId = headers.getSessionId();
-//    broadcastingService.pubBidInfoWhenSocketConnect(sessionId);
-    broadcastingService.sendFirstConnectToKafka(sessionId);
+  @GetMapping("/api/auction/bid/inProgress/{auctionId}")
+  public ResponseEntity<ResponseFormat<KafkaAuctionBidHistoryDto>> getBidInfoInProgress(
+      @PathVariable String auctionId
+  ) {
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<KafkaAuctionBidHistoryDto>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("진행 중인 경매 정보 조회 성공")
+                .data(broadcastingService.getPublishingBidHistory(auctionId))
+                .build()
+        );
   }
 
-  @EventListener
-  public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
-    log.info("연결 해제, {}", sessionDisconnectEvent);
+  @PutMapping("/api/auction/bid/refreshCredit")
+  public ResponseEntity<ResponseFormat<Void>> refreshCredit(
+      @RequestHeader Long memberId, @RequestHeader MemberRoleEnum memberRole
+  ) {
+
+    broadcastingService.setCredit(memberId, memberRole);
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.getReasonPhrase())
+                .detail("크레딧 갱신 성공")
+                .build()
+        );
   }
 }

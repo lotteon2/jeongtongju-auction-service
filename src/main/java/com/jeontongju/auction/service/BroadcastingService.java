@@ -161,13 +161,7 @@ public class BroadcastingService {
     Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
 
-    if (consumerId != null & memberRoleEnum != null) {
-      if (!memberRoleEnum.equals(MemberRoleEnum.ROLE_ADMIN)) {
-        MemberDto memberDto = client.getConsumerInfo(consumerId).getData().to(consumerId);
-        ValueOperations<String, MemberDto> memberRedis = redisGenericTemplate.opsForValue();
-        memberRedis.set("consumer_id_" + consumerId, memberDto, TTL, TimeUnit.HOURS);
-      }
-    }
+    setCredit(consumerId, memberRoleEnum);
 
     return AuctionBroadcastResponseDto.of(auction);
   }
@@ -254,30 +248,17 @@ public class BroadcastingService {
         KafkaChatMessageDto.toKafkaChatMessageDto(message, memberDto, auctionId));
   }
 
-  public void sendFirstConnectToKafka(String sessionId) {
-    kafkaBidInfoTemplate.send("bid-info-connect", sessionId);
-  }
-
   @KafkaListener(topics = BID_CHAT)
   public void pubMessage(KafkaChatMessageDto message) {
     log.info("message : {}", message.getMessage());
     template.convertAndSend("/sub/chat/" + message.getAuctionId(), message);
+    template.convertAndSendToUser("id", "/sub/chat/" + message.getAuctionId(), message);
   }
 
   @KafkaListener(topics = BID_INFO)
   public void pubBidInfo(String auctionId) {
     // 입찰 내역, 호가 전달
     template.convertAndSend("/sub/bid-info/" + auctionId, getPublishingBidHistory(auctionId));
-  }
-
-  @KafkaListener(topics = "bid-info-connect")
-  public void pubBidInfoWhenSocketConnect(String sessionId) {
-    String auctionId = auctionRepository.findThisAuction().orElseThrow(AuctionNotFoundException::new).getAuctionId();
-    log.info("first-connect, sessionId : {}", sessionId);
-    template.convertAndSendToUser(
-        sessionId, "/sub/bid-info/" + auctionId,
-        getPublishingBidHistory(auctionId)
-    );
   }
 
   public KafkaAuctionBidHistoryDto getPublishingBidHistory(String auctionId) {
@@ -298,6 +279,18 @@ public class BroadcastingService {
     Long askingPrice = Objects.requireNonNullElse(askingPriceRedis.get("asking_price_" + auctionProductId), 0L);
 
     return KafkaAuctionBidHistoryDto.of(bidHistoryList, productList, askingPrice);
+  }
+
+  public void setCredit(Long consumerId, MemberRoleEnum memberRoleEnum) {
+    if (consumerId != null & memberRoleEnum != null) {
+      if (!memberRoleEnum.equals(MemberRoleEnum.ROLE_ADMIN)) {
+        MemberDto memberDto = client.getConsumerInfo(consumerId).getData().to(consumerId);
+        ValueOperations<String, MemberDto> memberRedis = redisGenericTemplate.opsForValue();
+        memberRedis.set("consumer_id_" + consumerId, memberDto, TTL, TimeUnit.HOURS);
+      }
+    } else {
+      throw new InvalidConsumerCreditException();
+    }
   }
 
   private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {
