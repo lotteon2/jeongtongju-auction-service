@@ -375,7 +375,7 @@ public class AuctionRepositoryTest {
   }
 
   @Test
-  @Order(12)
+  @Order(13)
   @DisplayName("입찰 내역 조회")
   void getBidInfoHistory() {
     initProductList = init.initAuctionProduct(initAuction);
@@ -413,5 +413,27 @@ public class AuctionRepositoryTest {
 
     assertEquals(result.get(0).getBidPrice(), 20000L);
     assertEquals(result.get(1).getBidPrice(), 30000L);
+  }
+
+  @Test
+  @Order(14)
+  @DisplayName("생성 후 생성일자가 존재하고, 수정 후 생성일자와 수정일자가 달라야 함")
+  void getCreatedAtAndUpdatedAt() {
+    Auction auction = Auction.builder()
+        .title("제 19회 복순도가 경매대회")
+        .description("복순복순 복순도가")
+        .startDate(LocalDateTime.parse("2023-11-24T17:00:00"))
+        .build();
+
+    auctionRepository.save(auction);
+
+    Auction result = auctionRepository.findByTitle(auction.getTitle()).get();
+    assertNotNull(result.getCreatedAt());
+
+    auctionRepository.save(result.toBuilder().description("수정 수정 내용").build());
+
+    Auction result2 = auctionRepository.findByTitle(auction.getTitle()).get();
+    assertNotEquals(result2.getCreatedAt(), result2.getUpdatedAt());
+
   }
 }
