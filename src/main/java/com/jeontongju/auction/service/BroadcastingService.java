@@ -177,6 +177,10 @@ public class BroadcastingService {
     Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
 
+    if (auction.getStatus().equals(AuctionStatusEnum.AFTER)) {
+      throw new InvalidAuctionStatusException("해당 경매는 이미 완료되었습니다.");
+    }
+
     setCredit(consumerId, memberRoleEnum);
 
     return AuctionBroadcastBidHistoryResponseDto.of(
@@ -361,6 +365,10 @@ public class BroadcastingService {
 
     List<BroadcastProductResponseDto> auctionProductList = getAuctionProductListFromRedis(
         auctionId);
+
+    if (auctionProductList == null) {
+      throw new AuctionProductNotFoundException();
+    }
 
     int size = auctionProductList.size();
     if (index >= size) {
