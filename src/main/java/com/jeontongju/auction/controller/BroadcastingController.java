@@ -2,21 +2,18 @@ package com.jeontongju.auction.controller;
 
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.request.ChatMessageDto;
+import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResponseDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
-import com.jeontongju.auction.dto.socket.KafkaAuctionBidHistoryDto;
+import com.jeontongju.auction.dto.socket.AuctionBidHistoryDto;
 import com.jeontongju.auction.service.BroadcastingService;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.annotation.SubscribeMapping;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,8 +22,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.socket.messaging.SessionConnectEvent;
-import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 @Slf4j
 @RestController
@@ -85,14 +80,14 @@ public class BroadcastingController {
   }
 
   @GetMapping("/api/auction/room/{auctionId}")
-  public ResponseEntity<ResponseFormat<AuctionBroadcastResponseDto>> enterStreaming(
+  public ResponseEntity<ResponseFormat<AuctionBroadcastBidHistoryResponseDto>> enterStreaming(
       @RequestHeader(required = false) Long memberId,
       @RequestHeader(required = false) MemberRoleEnum memberRole,
       @PathVariable String auctionId) {
 
     return ResponseEntity.ok()
         .body(
-            ResponseFormat.<AuctionBroadcastResponseDto>builder()
+            ResponseFormat.<AuctionBroadcastBidHistoryResponseDto>builder()
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 방 입장 성공")
@@ -125,21 +120,6 @@ public class BroadcastingController {
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 낙찰 성공")
-                .build()
-        );
-  }
-
-  @GetMapping("/api/auction/bid/inProgress/{auctionId}")
-  public ResponseEntity<ResponseFormat<KafkaAuctionBidHistoryDto>> getBidInfoInProgress(
-      @PathVariable String auctionId
-  ) {
-    return ResponseEntity.ok()
-        .body(
-            ResponseFormat.<KafkaAuctionBidHistoryDto>builder()
-                .code(HttpStatus.OK.value())
-                .message(HttpStatus.OK.getReasonPhrase())
-                .detail("진행 중인 경매 정보 조회 성공")
-                .data(broadcastingService.getPublishingBidHistory(auctionId))
                 .build()
         );
   }
