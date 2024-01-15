@@ -11,15 +11,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuctionBroadcastBidHistoryResponseDto {
-  private AuctionBroadcastResponseDto auctionBroadcastResponseDto;
-  private AuctionBidHistoryDto auctionBidHistoryDto;
+  private AuctionBroadcastResponseDto broadcastResponse;
+  private AuctionBidHistoryDto bidHistory;
 
   public static AuctionBroadcastBidHistoryResponseDto of(
       AuctionBroadcastResponseDto auctionBroadcastResponseDto, AuctionBidHistoryDto auctionBidHistoryDto
   ) {
     return AuctionBroadcastBidHistoryResponseDto.builder()
-        .auctionBroadcastResponseDto(auctionBroadcastResponseDto)
-        .auctionBidHistoryDto(auctionBidHistoryDto)
+        .broadcastResponse(auctionBroadcastResponseDto)
+        .bidHistory(auctionBidHistoryDto)
         .build();
   }
 }
