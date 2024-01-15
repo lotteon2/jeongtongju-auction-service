@@ -1,6 +1,5 @@
 package com.jeontongju.auction.dto.socket;
 
-import com.jeontongju.auction.dto.request.ChatMessageDto;
 import io.github.bitbox.bitbox.dto.MemberDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class KafkaChatMessageDto {
+public class ChatMessageDto {
 
   private String auctionId;
   private Long memberId;
@@ -19,9 +18,10 @@ public class KafkaChatMessageDto {
   private String memberProfileImage;
   private String message;
 
-  public static KafkaChatMessageDto toKafkaChatMessageDto(ChatMessageDto messageDto,
+  public static ChatMessageDto toKafkaChatMessageDto(
+      com.jeontongju.auction.dto.request.ChatMessageDto messageDto,
       MemberDto memberDto, String auctionId) {
-    return KafkaChatMessageDto.builder()
+    return ChatMessageDto.builder()
         .auctionId(auctionId)
         .memberId(messageDto.getMemberId())
         .memberNickname(memberDto.getNickname())
