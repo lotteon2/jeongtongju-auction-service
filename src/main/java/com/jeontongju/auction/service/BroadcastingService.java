@@ -82,9 +82,6 @@ public class BroadcastingService {
 
   private final KafkaProcessor kafkaProcessor;
   private final SimpMessagingTemplate template;
-//  private final KafkaTemplate<String, ChatMessageDto> kafkaChatTemplate;
-//  private final KafkaTemplate<String, String> kafkaBidInfoTemplate;
-//  private final KafkaTemplate<String, AuctionOrderDto> kafkaOrderTemplate;
 
   private final ConsumerServiceFeignClient client;
 
