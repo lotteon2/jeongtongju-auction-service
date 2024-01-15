@@ -147,14 +147,15 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
   public ResponseEntity<ResponseFormat<Void>> handleConsumerInvalidCreditException(
       InvalidConsumerCreditException e
   ) {
-    HttpStatus status = HttpStatus.BAD_REQUEST;
+    HttpStatus status = HttpStatus.OK;
     return ResponseEntity
-        .status(status)
+        .ok()
         .body(
             ResponseFormat.<Void>builder()
                 .code(status.value())
                 .message(status.name())
                 .detail(e.getMessage())
+                .failure(FailureTypeEnum.INVALID_CONSUMER_CREDIT)
                 .build()
         );
   }
