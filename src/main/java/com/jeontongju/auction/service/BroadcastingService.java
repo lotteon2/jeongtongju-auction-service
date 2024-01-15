@@ -79,9 +79,7 @@ public class BroadcastingService {
         .orElseThrow(AuctionNotFoundException::new);
 
     AuctionStatusEnum status = auction.getStatus();
-    if (status.equals(AuctionStatusEnum.ING)) {
-      throw new InvalidAuctionStatusException("이미 진행 중인 경매입니다.");
-    } else if (status.equals(AuctionStatusEnum.AFTER)) {
+    if (status.equals(AuctionStatusEnum.AFTER)) {
       throw new InvalidAuctionStatusException("이미 완료된 경매입니다.");
     }
 
@@ -89,19 +87,20 @@ public class BroadcastingService {
       throw new EmptyAuctionProductException();
     }
 
-    List<BroadcastProductResponseDto> productList = auction.getAuctionProductList()
-        .stream()
-        .map(BroadcastProductResponseDto::to)
-        .collect(Collectors.toList());
+    if (!status.equals(AuctionStatusEnum.ING)) {
+      List<BroadcastProductResponseDto> productList = auction.getAuctionProductList()
+          .stream()
+          .map(BroadcastProductResponseDto::to)
+          .collect(Collectors.toList());
 
-    productList.get(0).proceedProgress();
+      productList.get(0).proceedProgress();
 
-    ValueOperations<String, List<BroadcastProductResponseDto>> auctionProductRedis = redisGenericTemplate.opsForValue();
-    auctionProductRedis.set("auction_id_" + auctionId, productList, TTL, TimeUnit.HOURS);
+      ValueOperations<String, List<BroadcastProductResponseDto>> auctionProductRedis = redisGenericTemplate.opsForValue();
+      auctionProductRedis.set("auction_id_" + auctionId, productList, TTL, TimeUnit.HOURS);
 
-    ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
-    productIdx.set(auctionId + "_index", 0, TTL, TimeUnit.HOURS);
-
+      ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
+      productIdx.set(auctionId + "_index", 0, TTL, TimeUnit.HOURS);
+    }
     auctionRepository.save(auction.toBuilder().status(AuctionStatusEnum.ING).build());
   }
 
