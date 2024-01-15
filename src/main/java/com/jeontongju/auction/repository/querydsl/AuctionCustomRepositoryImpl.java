@@ -54,6 +54,7 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
     return Optional.ofNullable(result);
   }
 
+  // 매 주 월요일 열리는 경매
   @Override
   public Optional<Auction> findThisAuction() {
     Auction result = jpaQueryFactory
@@ -88,6 +89,50 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
         .from(auctionProduct)
         .where(auctionProduct.status.eq(AuctionProductStatusEnum.WAIT))
         .fetchOne();
+  }
+
+  // 가장 최근 열리는 경매 (임시)
+  @Override
+  public Optional<Auction> findThisAuctionRecent() {
+    Auction result = jpaQueryFactory
+        .selectFrom(auction)
+        .where(
+            auction.isDeleted.isFalse()
+        )
+        .orderBy(auction.startDate.asc())
+        .limit(1)
+        .fetchOne();
+
+    return Optional.ofNullable(result);
+  }
+
+  // 가장 최근 열리는 경매 (임시)
+  @Override
+  public Optional<SellerAuctionResponseDto> findRegistrableAuctionRecent() {
+    SellerAuctionResponseDto result = jpaQueryFactory
+        .select(
+            Projections.fields(
+                SellerAuctionResponseDto.class,
+                auction.auctionId,
+                auction.title,
+                Expressions.cases()
+                    .when(auctionProduct.status.eq(AuctionProductStatusEnum.ALLOW)).then(1L)
+                    .otherwise(0L)
+                    .sum().as("currentParticipants")
+            )
+        )
+        .from(auction)
+        .leftJoin(auction.auctionProductList, auctionProduct)
+        .where(
+            auction.isDeleted.isFalse(),
+            auction.status.eq(AuctionStatusEnum.BEFORE)
+        )
+        .orderBy(auction.startDate.asc())
+        .limit(1)
+        .groupBy(auction.auctionId)
+        .fetchOne();
+
+    return Optional.ofNullable(result);
   }
 
   private LocalDate getTargetAuctionDate(LocalDate today, DayOfWeek dayOfWeek) {

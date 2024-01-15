@@ -62,7 +62,8 @@ public class AuctionService {
    * @return SellerAuctionResponseDto
    */
   public SellerAuctionResponseDto getRegistrableAuction() {
-    return auctionRepository.findRegistrableAuction().orElseThrow(AuctionNotFoundException::new);
+//    return auctionRepository.findRegistrableAuction().orElseThrow(AuctionNotFoundException::new);
+    return auctionRepository.findRegistrableAuctionRecent().orElseThrow(AuctionNotFoundException::new);
   }
 
   /**
@@ -138,7 +139,10 @@ public class AuctionService {
    * @return AuctionDetailResponseDto
    */
   public AuctionDetailResponseDto getThisAuctionDetail() {
-    Auction auction = auctionRepository.findThisAuction()
+//    Auction auction = auctionRepository.findThisAuction()
+//    .orElseThrow(AuctionNotFoundException::new);
+
+    Auction auction = auctionRepository.findThisAuctionRecent()
         .orElseThrow(AuctionNotFoundException::new);
 
     return AuctionDetailResponseDto.of(auction);

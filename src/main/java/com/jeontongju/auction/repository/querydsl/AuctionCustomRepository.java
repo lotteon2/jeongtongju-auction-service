@@ -10,4 +10,8 @@ public interface AuctionCustomRepository {
   Optional<Auction> findThisAuction();
   Long findDateOfWeek(LocalDate localDate);
   Long countByAuctionProductIsWait();
+
+  Optional<Auction> findThisAuctionRecent();
+
+  Optional<SellerAuctionResponseDto> findRegistrableAuctionRecent();
 }
