@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,7 +40,12 @@ public class SellerAuctionEntriesResponseDto {
         .orElseThrow(AuctionProductNotFoundException::new)
         .getBidPrice();
     this.totalBid = auctionProduct.getBidInfoList().isEmpty()
-        ? null : (long) auctionProduct.getBidInfoList().size();
+        ? null :
+        (long) auctionProduct.getBidInfoList()
+            .stream()
+            .map(BidInfo::getConsumerId)
+            .collect(Collectors.toSet())
+            .size();
     this.auctionProductStatus = auctionProduct.getStatus().name();
   }
 }
