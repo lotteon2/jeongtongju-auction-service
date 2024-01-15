@@ -61,7 +61,8 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
         .where(
             auction.isDeleted.isFalse(),
             auction.startDate.after(
-                getTargetAuctionDate(LocalDate.now(), DayOfWeek.FRIDAY).atStartOfDay())
+                getTargetAuctionDate(LocalDate.now(), DayOfWeek.MONDAY).atStartOfDay()
+            )
         )
         .orderBy(auction.startDate.asc())
         .limit(1)
@@ -91,9 +92,9 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
 
   private LocalDate getTargetAuctionDate(LocalDate today, DayOfWeek dayOfWeek) {
     if (today.getDayOfWeek().compareTo(dayOfWeek) <= 0) {
-      return today.with(DayOfWeek.FRIDAY);
+      return today.with(dayOfWeek);
     } else {
-      return today.plusDays(7).with(DayOfWeek.FRIDAY);
+      return today.plusDays(7).with(dayOfWeek);
     }
   }
 
