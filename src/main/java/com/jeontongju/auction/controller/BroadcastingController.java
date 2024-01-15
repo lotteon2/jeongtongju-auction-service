@@ -67,6 +67,7 @@ public class BroadcastingController {
       @PathVariable String auctionId
   ) {
 
+    broadcastingService.endAuction(auctionId);
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()
