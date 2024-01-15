@@ -1,7 +1,7 @@
 package com.jeontongju.auction.controller;
 
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
-import com.jeontongju.auction.dto.request.ChatMessageDto;
+import com.jeontongju.auction.dto.request.ChatMessageRequestDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResponseDto;
 import com.jeontongju.auction.service.BroadcastingService;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
@@ -29,7 +29,7 @@ public class BroadcastingController {
   private final BroadcastingService broadcastingService;
 
   @MessageMapping("/chat/{auctionId}")
-  public void pubMessage(ChatMessageDto message,
+  public void pubMessage(ChatMessageRequestDto message,
       @DestinationVariable("auctionId") String auctionId) {
     broadcastingService.sendMessageToKafka(message, auctionId);
   }

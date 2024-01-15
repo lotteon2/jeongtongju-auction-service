@@ -10,6 +10,7 @@ import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
 import com.jeontongju.auction.domain.BidInfoHistory;
 import com.jeontongju.auction.dto.redis.AuctionBidHistoryDto;
+import com.jeontongju.auction.dto.request.ChatMessageRequestDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResponseDto;
 import com.jeontongju.auction.dto.socket.BidHistoryInprogressDto;
 import com.jeontongju.auction.dto.socket.ChatMessageDto;
@@ -31,15 +32,18 @@ import com.jeontongju.auction.vo.BidInfoHistoryId;
 import io.github.bitbox.bitbox.dto.AuctionOrderDto;
 import io.github.bitbox.bitbox.dto.MemberDto;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -64,6 +68,9 @@ public class BroadcastingService {
 
   @Qualifier("redisGenericTemplate")
   private final RedisTemplate redisGenericTemplate;
+
+  @Value("profile.img")
+  private String profileImg;
 
   private static final Long TTL = 6L;
 
@@ -170,12 +177,18 @@ public class BroadcastingService {
   }
 
   public void modifyAskingPrice(String auctionId, Long askingPrice) {
+    // 진행 중인 경매 물품 조회
     String auctionProductId = getAuctionProductIdFromRedis(auctionId);
 
+    // 호가 수정
     ValueOperations<String, Long> askingPriceRedis = redisTemplate.opsForValue();
     askingPriceRedis.set("asking_price_" + auctionProductId, askingPrice, TTL, TimeUnit.HOURS);
 
+    // 수정된 호가로 경매 정보 전송
     kafkaBidInfoTemplate.send(BID_INFO, auctionId);
+    
+    // 수정된 호가 안내 메시지 전송
+    kafkaChatTemplate.send(BID_CHAT, setNotificationMessage(auctionId, updateAskingPriceMessage(askingPrice)));
   }
 
   @Transactional
@@ -214,7 +227,7 @@ public class BroadcastingService {
             successfulBid.getConsumerId(), successfulBid.getBidPrice(),
             auctionProductId, auctionProduct.getName(),
             successfulBid.getBidPrice(), auctionProduct.getSellerId(),
-            auctionProduct.getStoreName(), auctionProduct.getStoreImageUrl(),
+            auctionProduct.getStoreName(), auctionProduct.getThumbnailImageUrl(),
             1L
         )
     );
@@ -233,15 +246,20 @@ public class BroadcastingService {
       productList.get(index + 1).proceedProgress();
     }
 
-
+    // 8. Kafka 정보 전송
     ValueOperations<String, List<BroadcastProductResponseDto>> auctionProductRedis = redisGenericTemplate.opsForValue();
     auctionProductRedis.set("auction_id_" + auctionId, productList, TTL, TimeUnit.HOURS);
 
     kafkaBidInfoTemplate.send(BID_INFO, auctionId);
+
+    ValueOperations<String, MemberDto> memberRedis = redisGenericTemplate.opsForValue();
+    MemberDto memberDto = memberRedis.get("consumer_id_" + successfulBid.getConsumerId());
+    String nickname = memberDto.getNickname();
+
+    kafkaChatTemplate.send(BID_CHAT, setNotificationMessage(auctionId, successfulBidMessage(nickname)));
   }
 
-  public void sendMessageToKafka(com.jeontongju.auction.dto.request.ChatMessageDto message,
-      String auctionId) {
+  public void sendMessageToKafka(ChatMessageRequestDto message, String auctionId) {
     MemberDto memberDto;
     if (message.getMemberId() == 0) {
       memberDto = MemberDto.builder().memberId(0L).nickname("관리자").profileImage("").credit(0L)
@@ -256,9 +274,7 @@ public class BroadcastingService {
 
   @KafkaListener(topics = BID_CHAT)
   public void pubMessage(ChatMessageDto message) {
-    log.info("message : {}", message.getMessage());
     template.convertAndSend("/sub/chat/" + message.getAuctionId(), message);
-    template.convertAndSendToUser("id", "/sub/chat/" + message.getAuctionId(), message);
   }
 
   @KafkaListener(topics = BID_INFO)
@@ -308,9 +324,16 @@ public class BroadcastingService {
   private String getAuctionProductIdFromRedis(String auctionId) {
     ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
     int index = productIdx.get(auctionId + "_index");
-    log.info("proudct idx : {}", index);
-    return getAuctionProductListFromRedis(auctionId).get(index)
-        .getAuctionProductId();
+
+    List<BroadcastProductResponseDto> auctionProductList = getAuctionProductListFromRedis(
+        auctionId);
+
+    int size = auctionProductList.size();
+    if (index >= size) {
+      return auctionProductList.get(size - 1).getAuctionProductId();
+    }
+
+    return auctionProductList.get(index).getAuctionProductId();
   }
 
   private List<BidInfo> convert(List<BidInfoHistory> list, Auction auction,
@@ -328,5 +351,23 @@ public class BroadcastingService {
         .bidPrice(bidInfoHistory.getBidPrice())
         .consumerId(bidInfoHistory.getConsumerId())
         .build();
+  }
+
+  private ChatMessageDto setNotificationMessage(String auctionId, String chatMessage) {
+    return ChatMessageDto.to(
+        auctionId,
+        -1L,
+        "\uD83C\uDF76 전통주점",
+        profileImg,
+        chatMessage
+    );
+  }
+
+  private String updateAskingPriceMessage(Long askingPrice) {
+    return "❗호가가 [" + NumberFormat.getInstance(Locale.KOREA).format(askingPrice) + "]만원으로 변경되었어요!";
+  }
+
+  private String successfulBidMessage(String nickname) {
+    return "🎉 [" + nickname + "]님이 낙찰되었어요!";
   }
 }

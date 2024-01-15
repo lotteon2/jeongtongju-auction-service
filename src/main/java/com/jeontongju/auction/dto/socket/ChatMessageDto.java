@@ -1,5 +1,6 @@
 package com.jeontongju.auction.dto.socket;
 
+import com.jeontongju.auction.dto.request.ChatMessageRequestDto;
 import io.github.bitbox.bitbox.dto.MemberDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +20,7 @@ public class ChatMessageDto {
   private String message;
 
   public static ChatMessageDto toKafkaChatMessageDto(
-      com.jeontongju.auction.dto.request.ChatMessageDto messageDto,
+      ChatMessageRequestDto messageDto,
       MemberDto memberDto, String auctionId) {
     return ChatMessageDto.builder()
         .auctionId(auctionId)
@@ -27,6 +28,17 @@ public class ChatMessageDto {
         .memberNickname(memberDto.getNickname())
         .memberProfileImage(memberDto.getProfileImage())
         .message(messageDto.getMessage())
+        .build();
+  }
+
+  public static ChatMessageDto to(String auctionId, Long memberId, String memberNickname,
+      String memberProfileImage, String message) {
+    return ChatMessageDto.builder()
+        .auctionId(auctionId)
+        .memberId(memberId)
+        .memberNickname(memberNickname)
+        .memberProfileImage(memberProfileImage)
+        .message(message)
         .build();
   }
 }
