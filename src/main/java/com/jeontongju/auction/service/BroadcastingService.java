@@ -227,11 +227,13 @@ public class BroadcastingService {
     // 7. 진행도 다음으로 수정
     ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
     int index = productIdx.get(auctionId + "_index");
+    productIdx.set(auctionId + "_index", index + 1);
 
     productList.get(index).closeProgress();
     if (index < productList.size() - 1) {
       productList.get(index + 1).proceedProgress();
     }
+
 
     ValueOperations<String, List<BroadcastProductResponseDto>> auctionProductRedis = redisGenericTemplate.opsForValue();
     auctionProductRedis.set("auction_id_" + auctionId, productList, TTL, TimeUnit.HOURS);
@@ -306,7 +308,9 @@ public class BroadcastingService {
 
   private String getAuctionProductIdFromRedis(String auctionId) {
     ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
-    return getAuctionProductListFromRedis(auctionId).get(productIdx.get(auctionId + "_index"))
+    int index = productIdx.get(auctionId + "_index");
+    log.info("proudct idx : {}", index);
+    return getAuctionProductListFromRedis(auctionId).get(index)
         .getAuctionProductId();
   }
 
