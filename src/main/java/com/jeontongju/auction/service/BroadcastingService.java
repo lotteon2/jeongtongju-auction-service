@@ -9,9 +9,9 @@ import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
 import com.jeontongju.auction.domain.BidInfoHistory;
-import com.jeontongju.auction.dto.redis.AuctionBidHistoryRedisDto;
+import com.jeontongju.auction.dto.redis.AuctionBidHistoryDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResponseDto;
-import com.jeontongju.auction.dto.socket.AuctionBidHistoryDto;
+import com.jeontongju.auction.dto.socket.BidHistoryInprogressDto;
 import com.jeontongju.auction.dto.socket.ChatMessageDto;
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
@@ -144,9 +144,9 @@ public class BroadcastingService {
 
     // 4. 입찰 내역 저장
     // TODO : Redis Util
-    ZSetOperations<String, AuctionBidHistoryRedisDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
+    ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
 
-    AuctionBidHistoryRedisDto historyDto = AuctionBidHistoryRedisDto
+    AuctionBidHistoryDto historyDto = AuctionBidHistoryDto
         .of(memberDto, auctionProductId, bidPrice);
 
     bidHistoryRedis.add("auction_product_id" + auctionProductId, historyDto, bidPrice);
@@ -266,13 +266,13 @@ public class BroadcastingService {
     template.convertAndSend("/sub/bid-info/" + auctionId, getPublishingBidHistory(auctionId));
   }
 
-  public AuctionBidHistoryDto getPublishingBidHistory(String auctionId) {
+  public BidHistoryInprogressDto getPublishingBidHistory(String auctionId) {
     List<BroadcastProductResponseDto> productList = getAuctionProductListFromRedis(auctionId);
     String auctionProductId = getAuctionProductIdFromRedis(auctionId);
 
     // 경매 상품 입찰 내역 조회
-    ZSetOperations<String, AuctionBidHistoryRedisDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
-    List<AuctionBidHistoryRedisDto> bidHistoryList = new ArrayList<>(
+    ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
+    List<AuctionBidHistoryDto> bidHistoryList = new ArrayList<>(
         Objects.requireNonNullElse(
             bidHistoryRedis.reverseRange("auction_product_id" + auctionProductId, 0, -1),
             Collections.emptyList()
@@ -284,7 +284,7 @@ public class BroadcastingService {
     Long askingPrice = Objects.requireNonNullElse(
         askingPriceRedis.get("asking_price_" + auctionProductId), 0L);
 
-    return AuctionBidHistoryDto.of(bidHistoryList, productList, askingPrice);
+    return BidHistoryInprogressDto.of(bidHistoryList, productList, askingPrice);
   }
 
   public void setCredit(Long consumerId, MemberRoleEnum memberRoleEnum) {

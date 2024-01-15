@@ -1,6 +1,5 @@
 package com.jeontongju.auction.dto.socket;
 
-import com.jeontongju.auction.dto.redis.AuctionBidHistoryRedisDto;
 import com.jeontongju.auction.dto.response.BroadcastProductResponseDto;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -12,16 +11,16 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuctionBidHistoryDto {
+public class BidHistoryInprogressDto {
 
   private Long askingPrice;
-  private List<AuctionBidHistoryRedisDto> bidHistoryList;
+  private List<com.jeontongju.auction.dto.redis.AuctionBidHistoryDto> bidHistoryList;
   private List<BroadcastProductResponseDto> auctionProductList;
 
-  public static AuctionBidHistoryDto of(List<AuctionBidHistoryRedisDto> bidHistoryList,
+  public static BidHistoryInprogressDto of(List<com.jeontongju.auction.dto.redis.AuctionBidHistoryDto> bidHistoryList,
       List<BroadcastProductResponseDto> auctionProductList,
       Long askingPrice) {
-    return AuctionBidHistoryDto.builder()
+    return BidHistoryInprogressDto.builder()
         .bidHistoryList(bidHistoryList)
         .auctionProductList(auctionProductList)
         .askingPrice(askingPrice)

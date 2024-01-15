@@ -1,6 +1,6 @@
 package com.jeontongju.auction.dto.response;
 
-import com.jeontongju.auction.dto.socket.AuctionBidHistoryDto;
+import com.jeontongju.auction.dto.socket.BidHistoryInprogressDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AuctionBroadcastBidHistoryResponseDto {
   private AuctionBroadcastResponseDto broadcastResponse;
-  private AuctionBidHistoryDto bidHistory;
+  private BidHistoryInprogressDto bidHistory;
 
   public static AuctionBroadcastBidHistoryResponseDto of(
-      AuctionBroadcastResponseDto auctionBroadcastResponseDto, AuctionBidHistoryDto auctionBidHistoryDto
+      AuctionBroadcastResponseDto auctionBroadcastResponseDto, BidHistoryInprogressDto bidHistoryInprogressDto
   ) {
     return AuctionBroadcastBidHistoryResponseDto.builder()
         .broadcastResponse(auctionBroadcastResponseDto)
-        .bidHistory(auctionBidHistoryDto)
+        .bidHistory(bidHistoryInprogressDto)
         .build();
   }
 }

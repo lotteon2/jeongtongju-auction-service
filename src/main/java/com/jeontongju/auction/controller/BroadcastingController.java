@@ -3,8 +3,6 @@ package com.jeontongju.auction.controller;
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.request.ChatMessageDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResponseDto;
-import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
-import com.jeontongju.auction.dto.socket.AuctionBidHistoryDto;
 import com.jeontongju.auction.service.BroadcastingService;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
