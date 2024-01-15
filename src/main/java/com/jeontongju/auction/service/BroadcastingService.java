@@ -9,6 +9,7 @@ import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
 import com.jeontongju.auction.domain.BidInfoHistory;
+import com.jeontongju.auction.dto.redis.AuctionBidHistoryRedisDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResponseDto;
 import com.jeontongju.auction.dto.socket.AuctionBidHistoryDto;
 import com.jeontongju.auction.dto.socket.ChatMessageDto;
@@ -143,9 +144,9 @@ public class BroadcastingService {
 
     // 4. 입찰 내역 저장
     // TODO : Redis Util
-    ZSetOperations<String, com.jeontongju.auction.dto.redis.AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
+    ZSetOperations<String, AuctionBidHistoryRedisDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
 
-    com.jeontongju.auction.dto.redis.AuctionBidHistoryDto historyDto = com.jeontongju.auction.dto.redis.AuctionBidHistoryDto
+    AuctionBidHistoryRedisDto historyDto = AuctionBidHistoryRedisDto
         .of(memberDto, auctionProductId, bidPrice);
 
     bidHistoryRedis.add("auction_product_id" + auctionProductId, historyDto, bidPrice);
@@ -270,8 +271,8 @@ public class BroadcastingService {
     String auctionProductId = getAuctionProductIdFromRedis(auctionId);
 
     // 경매 상품 입찰 내역 조회
-    ZSetOperations<String, com.jeontongju.auction.dto.redis.AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
-    List<com.jeontongju.auction.dto.redis.AuctionBidHistoryDto> bidHistoryList = new ArrayList<>(
+    ZSetOperations<String, AuctionBidHistoryRedisDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
+    List<AuctionBidHistoryRedisDto> bidHistoryList = new ArrayList<>(
         Objects.requireNonNullElse(
             bidHistoryRedis.reverseRange("auction_product_id" + auctionProductId, 0, -1),
             Collections.emptyList()

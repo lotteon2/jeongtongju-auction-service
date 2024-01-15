@@ -10,12 +10,12 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuctionBidHistoryDto extends MemberDto {
+public class AuctionBidHistoryRedisDto extends MemberDto {
   private String auctionProductId;
   private Long bidPrice;
 
-  public static AuctionBidHistoryDto of(MemberDto memberDto, String auctionProductId, Long bidPrice) {
-    return AuctionBidHistoryDto.builder()
+  public static AuctionBidHistoryRedisDto of(MemberDto memberDto, String auctionProductId, Long bidPrice) {
+    return AuctionBidHistoryRedisDto.builder()
         .memberId(memberDto.getMemberId())
         .nickname(memberDto.getNickname())
         .profileImage(memberDto.getProfileImage())
