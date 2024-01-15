@@ -274,7 +274,7 @@ public class BroadcastingService {
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
     List<AuctionBidHistoryDto> bidHistoryList = new ArrayList<>(
         Objects.requireNonNullElse(
-            bidHistoryRedis.reverseRange("auction_product_id" + auctionProductId, 0, -1),
+            bidHistoryRedis.reverseRange("auction_product_id" + auctionProductId, 0, 4),
             Collections.emptyList()
         )
     );
