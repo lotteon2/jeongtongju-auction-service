@@ -57,11 +57,14 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import org.springframework.web.socket.messaging.SessionSubscribeEvent;
+import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
 
 @Slf4j
@@ -388,17 +391,32 @@ public class BroadcastingService {
   }
 
   @EventListener
+  public void subscribeEvent(SessionSubscribeEvent sessionSubscribeEvent) {
+    SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.wrap(sessionSubscribeEvent.getMessage());
+    log.info("session Id : {}", accessor.getSessionId());
+    log.info("session Destination : {}", accessor.getDestination());
+    if (accessor.getDestination().equals("/sub/chat")) {
+      kafkaProcessor.send("auction-numbers", 1);
+    }
+  }
+  @EventListener
+  public void unsubscribeEvent(SessionUnsubscribeEvent sessionUnsubscribeEvent) {
+    SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.wrap(sessionUnsubscribeEvent.getMessage());
+    log.info("session Id : {}", accessor.getSessionId());
+    log.info("session Destination : {}", accessor.getDestination());
+    if (accessor.getDestination().equals("/sub/chat")) {
+      kafkaProcessor.send("auction-numbers", -1);
+    }
+  }
+
+  @EventListener
   public void connectEvent(SessionConnectEvent sessionConnectEvent) {
     log.info("연결 성공, {}", sessionConnectEvent);
-
-    kafkaProcessor.send("auction-numbers", 1);
   }
 
   @EventListener
   public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
     log.info("연결 해제, {}", sessionDisconnectEvent);
-
-    kafkaProcessor.send("auction-numbers", -1);
   }
 
   private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {
