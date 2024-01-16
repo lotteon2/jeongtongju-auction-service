@@ -265,7 +265,7 @@ public class BroadcastingService {
     );
 
     // 6. 입찰 내역 삭제
-    redisTemplate.delete("auction_product_id" + auctionProductId);
+    redisGenericTemplate.delete("auction_product_id" + auctionProductId);
     redisTemplate.delete("asking_price_" + auctionProductId);
 
     // 7. 진행도 다음으로 수정
@@ -341,10 +341,17 @@ public class BroadcastingService {
   }
 
   @KafkaListener(topics = AUCTION_NUMBERS)
-  public void pubChatNumbers(int sessions) {
+  public void pubChatNumbers(int sign) {
     ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
     String auctionId = auctionRedis.get("auction");
-    template.convertAndSend("/sub/auction-numbers/" + auctionId, sessions);
+
+    ValueOperations<String, Integer> chatRedis = redisTemplate.opsForValue();
+    int chatNumbers = Objects.requireNonNullElse(chatRedis.get("chat_numbers_" + auctionId), 0);
+    chatRedis.set("chat_numbers_" + auctionId, chatNumbers + sign);
+
+    int result = (int) Math.ceil(((float)chatNumbers + sign)/ 4);
+
+    template.convertAndSend("/sub/auction-numbers/" + auctionId, result);
   }
 
   public BidHistoryInprogressDto getPublishingBidHistory(String auctionId) {
@@ -384,18 +391,14 @@ public class BroadcastingService {
   public void connectEvent(SessionConnectEvent sessionConnectEvent) {
     log.info("연결 성공, {}", sessionConnectEvent);
 
-    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
-    int webSocketSessions = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
-    kafkaProcessor.send("auction-numbers", Math.ceil((double)webSocketSessions / 4));
+    kafkaProcessor.send("auction-numbers", 1);
   }
 
   @EventListener
   public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
     log.info("연결 해제, {}", sessionDisconnectEvent);
 
-    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
-    int webSocketSessions = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
-    kafkaProcessor.send("auction-numbers", Math.ceil((double)webSocketSessions / 4));
+    kafkaProcessor.send("auction-numbers", -1);
   }
 
   private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {
