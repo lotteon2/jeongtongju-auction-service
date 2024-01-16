@@ -355,8 +355,8 @@ public class BroadcastingService {
     ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
     String auctionId = auctionRedis.get("auction");
 
-    ValueOperations<String, Integer> numberRedis = redisTemplate.opsForValue();
-    Set<String> keys = redisTemplate.keys("numbers_" + auctionId + "*");
+    ValueOperations<String, Integer> numberRedis = redisGenericTemplate.opsForValue();
+    Set<String> keys = redisGenericTemplate.keys("numbers_" + auctionId + "*");
 
     int result = 0;
     for (String key : keys) {
