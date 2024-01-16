@@ -6,6 +6,7 @@ import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.BID_RESULT;
 import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.CREATE_AUCTION_ORDER;
 
 import com.jeontongju.auction.client.ConsumerServiceFeignClient;
+import com.jeontongju.auction.config.WebSocketCustomHandler;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
@@ -48,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
@@ -72,7 +74,7 @@ public class BroadcastingService {
   private final AuctionProductRepository auctionProductRepository;
   private final BidInfoRepository bidInfoRepository;
   private final BidInfoHistoryRepository bidInfoHistoryRepository;
-  private SubProtocolWebSocketHandler subProtocolWebSocketHandler;
+  private final WebSocketCustomHandler webSocketCustomHandler;
 
   @Qualifier("redisStringTemplate")
   private final RedisTemplate redisTemplate;
@@ -373,7 +375,7 @@ public class BroadcastingService {
   @EventListener
   public void connectEvent(SessionConnectEvent sessionConnectEvent) {
     log.info("연결 성공, {}", sessionConnectEvent);
-    int webSocketSessions = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+    int webSocketSessions = webSocketCustomHandler.getStats().getWebSocketSessions();
     log.info("세션 인원 : {}", webSocketSessions);
     kafkaProcessor.send("auction-numbers", webSocketSessions);
   }
@@ -381,7 +383,7 @@ public class BroadcastingService {
   @EventListener
   public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
     log.info("연결 해제, {}", sessionDisconnectEvent);
-    int webSocketSessions = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+    int webSocketSessions = webSocketCustomHandler.getStats().getWebSocketSessions();
     log.info("세션 인원 : {}", webSocketSessions);
     kafkaProcessor.send("auction-numbers", webSocketSessions);
   }
