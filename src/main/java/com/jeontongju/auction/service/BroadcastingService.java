@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -86,6 +87,9 @@ public class BroadcastingService {
 
   @Value("${profile.img}")
   private String profileImg;
+
+  @Value("${spring.kafka.consumer.group-id}")
+  private String groupId;
 
   private static final Long TTL = 6L;
 
@@ -327,34 +331,40 @@ public class BroadcastingService {
         ChatMessageDto.toKafkaChatMessageDto(message, memberDto, auctionId));
   }
 
+  // 채팅 전달
   @KafkaListener(topics = BID_CHAT)
   public void pubMessage(ChatMessageDto message) {
     template.convertAndSend("/sub/chat/" + message.getAuctionId(), message);
   }
 
+  // 입찰 내역, 호가 전달
   @KafkaListener(topics = BID_INFO)
   public void pubBidInfo(String auctionId) {
-    // 입찰 내역, 호가 전달
     template.convertAndSend("/sub/bid-info/" + auctionId, getPublishingBidHistory(auctionId));
   }
 
+  // 낙찰 내역 전달
   @KafkaListener(topics = BID_RESULT)
   public void pubBidResult(BidResultListDto bidResultListDto) {
     template.convertAndSend("/sub/bid-result/" + bidResultListDto.getAuctionId(), bidResultListDto);
   }
 
+  // 경매 인원 수 전달
   @KafkaListener(topics = AUCTION_NUMBERS)
   public void pubChatNumbers(int sign) {
     ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
     String auctionId = auctionRedis.get("auction");
 
-    ValueOperations<String, Integer> chatRedis = redisTemplate.opsForValue();
-    int chatNumbers = Objects.requireNonNullElse(chatRedis.get("chat_numbers_" + auctionId), 0);
-    chatRedis.set("chat_numbers_" + auctionId, chatNumbers + sign);
+    ValueOperations<String, Integer> numberRedis = redisTemplate.opsForValue();
+    Set<String> keys = redisTemplate.keys("numbers_" + auctionId + "*");
+    
+    int result = keys.stream()
+        .mapToInt(key -> numberRedis.get(key))
+        .sum();
 
-    int result = (int) Math.ceil(((float)chatNumbers + sign)/ 4);
+    log.info("참가 인원 : {}", Math.ceil((float)result / 4));
 
-    template.convertAndSend("/sub/auction-numbers/" + auctionId, result);
+    template.convertAndSend("/sub/auction-numbers/" + auctionId, Math.ceil((float)result / 4));
   }
 
   public BidHistoryInprogressDto getPublishingBidHistory(String auctionId) {
@@ -391,32 +401,31 @@ public class BroadcastingService {
   }
 
   @EventListener
-  public void subscribeEvent(SessionSubscribeEvent sessionSubscribeEvent) {
-    SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.wrap(sessionSubscribeEvent.getMessage());
-    log.info("session Id : {}", accessor.getSessionId());
-    log.info("session Destination : {}", accessor.getDestination());
-    if (accessor.getDestination().contains("/sub/chat")) {
-      kafkaProcessor.send("auction-numbers", 1);
-    }
-  }
-  @EventListener
-  public void unsubscribeEvent(SessionUnsubscribeEvent sessionUnsubscribeEvent) {
-    SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.wrap(sessionUnsubscribeEvent.getMessage());
-    log.info("session Id : {}", accessor.getSessionId());
-    log.info("session Destination : {}", accessor.getDestination());
-    if (accessor.getDestination().contains("/sub/chat")) {
-      kafkaProcessor.send("auction-numbers", -1);
-    }
-  }
-
-  @EventListener
   public void connectEvent(SessionConnectEvent sessionConnectEvent) {
     log.info("연결 성공, {}", sessionConnectEvent);
+
+    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
+
+    ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
+    String auctionId = auctionRedis.get("auction");
+
+    ValueOperations<String, Integer> chatRedis = redisTemplate.opsForValue();
+    chatRedis.set("numbers_" + auctionId + "_" + groupId, subProtocolWebSocketHandler.getStats().getWebSocketSessions());
+    kafkaProcessor.send(AUCTION_NUMBERS, 1);
   }
 
   @EventListener
   public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
     log.info("연결 해제, {}", sessionDisconnectEvent);
+
+    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
+
+    ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
+    String auctionId = auctionRedis.get("auction");
+
+    ValueOperations<String, Integer> chatRedis = redisTemplate.opsForValue();
+    chatRedis.set("numbers_" + auctionId + "_" + groupId, subProtocolWebSocketHandler.getStats().getWebSocketSessions());
+    kafkaProcessor.send(AUCTION_NUMBERS, 1);
   }
 
   private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {
