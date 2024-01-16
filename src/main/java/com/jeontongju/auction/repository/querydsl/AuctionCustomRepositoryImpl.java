@@ -99,8 +99,7 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
         .where(
             auction.isDeleted.isFalse()
         )
-        .orderBy(auction.startDate.asc(),
-            auction.createdAt.desc())
+        .orderBy(auction.createdAt.desc())
         .limit(1)
         .fetchOne();
 
@@ -128,8 +127,7 @@ public class AuctionCustomRepositoryImpl implements AuctionCustomRepository {
             auction.isDeleted.isFalse(),
             auction.status.eq(AuctionStatusEnum.BEFORE)
         )
-        .orderBy(auction.startDate.asc(),
-            auction.createdAt.desc())
+        .orderBy(auction.createdAt.desc())
         .limit(1)
         .groupBy(auction.auctionId)
         .fetchOne();
