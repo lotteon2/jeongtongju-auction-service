@@ -361,10 +361,7 @@ public class BroadcastingService {
     int result = 0;
     for (String key : keys) {
       result += numberRedis.get(key);
-      log.info("key : {}, result : {}", key, numberRedis.get(key));
     }
-
-    log.info("참가 인원 : {}", Math.ceil(result / 4.0));
 
     template.convertAndSend("/sub/auction-numbers/" + auctionId, Math.ceil(result / 4.0));
   }
@@ -382,7 +379,6 @@ public class BroadcastingService {
     ValueOperations<String, Long> numberRedis = redisGenericTemplate.opsForValue();
     numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers, TTL, TimeUnit.HOURS);
 
-    log.info("연결 시 세션 수 : {}", numbers);
     kafkaProcessor.send(AUCTION_NUMBERS, 1);
   }
 
@@ -399,7 +395,6 @@ public class BroadcastingService {
     ValueOperations<String, Long> numberRedis = redisGenericTemplate.opsForValue();
     numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers, TTL, TimeUnit.HOURS);
 
-    log.info("연결 해제 시 세션 수 : {}", numbers);
     kafkaProcessor.send(AUCTION_NUMBERS, 1);
   }
 
