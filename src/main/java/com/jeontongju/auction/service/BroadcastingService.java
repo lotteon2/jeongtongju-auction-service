@@ -395,7 +395,7 @@ public class BroadcastingService {
     SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.wrap(sessionSubscribeEvent.getMessage());
     log.info("session Id : {}", accessor.getSessionId());
     log.info("session Destination : {}", accessor.getDestination());
-    if (accessor.getDestination().equals("/sub/chat")) {
+    if (accessor.getDestination().contains("/sub/chat")) {
       kafkaProcessor.send("auction-numbers", 1);
     }
   }
@@ -404,7 +404,7 @@ public class BroadcastingService {
     SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.wrap(sessionUnsubscribeEvent.getMessage());
     log.info("session Id : {}", accessor.getSessionId());
     log.info("session Destination : {}", accessor.getDestination());
-    if (accessor.getDestination().equals("/sub/chat")) {
+    if (accessor.getDestination().contains("/sub/chat")) {
       kafkaProcessor.send("auction-numbers", -1);
     }
   }
