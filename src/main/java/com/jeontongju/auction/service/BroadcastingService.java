@@ -21,6 +21,7 @@ import com.jeontongju.auction.dto.socket.ChatMessageDto;
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
 import com.jeontongju.auction.dto.response.BroadcastProductResponseDto;
+import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
 import com.jeontongju.auction.exception.AuctionProductNotFoundException;
@@ -106,6 +107,7 @@ public class BroadcastingService {
     if (!status.equals(AuctionStatusEnum.ING)) {
       List<BroadcastProductResponseDto> productList = auction.getAuctionProductList()
           .stream()
+          .filter(product -> !product.getStatus().equals(AuctionProductStatusEnum.DENY))
           .map(BroadcastProductResponseDto::to)
           .collect(Collectors.toList());
 
