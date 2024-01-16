@@ -82,7 +82,7 @@ public class BroadcastingService {
   @Qualifier("redisGenericTemplate")
   private final RedisTemplate redisGenericTemplate;
 
-  @Value("profile.img")
+  @Value("${profile.img}")
   private String profileImg;
 
   private static final Long TTL = 6L;
