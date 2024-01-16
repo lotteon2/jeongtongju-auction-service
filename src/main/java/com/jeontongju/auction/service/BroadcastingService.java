@@ -297,6 +297,7 @@ public class BroadcastingService {
         BidResultDto.of(
             successfulBid.getConsumerId(),
             nickname,
+            auctionProductId,
             auctionProduct.getName(),
             successfulBid.getBidPrice()
         )
