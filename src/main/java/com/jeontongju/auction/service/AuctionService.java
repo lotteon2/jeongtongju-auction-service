@@ -54,7 +54,7 @@ public class AuctionService {
   private final AuctionProductRepository auctionProductRepository;
   private final BidInfoRepository bidInfoRepository;
   private final SellerServiceFeignClient sellerServiceFeignClient;
-  private static final Long LIMIT_PARTICIPANTS = 5L;
+  private static final Long LIMIT_PARTICIPANTS = 20L;
 
   /**
    * 셀러 - 등록 가능한 경매 조회
