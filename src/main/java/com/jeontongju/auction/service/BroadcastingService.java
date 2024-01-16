@@ -356,7 +356,7 @@ public class BroadcastingService {
     String auctionId = auctionRedis.get("auction");
 
     ValueOperations<String, Integer> numberRedis = redisTemplate.opsForValue();
-    Set<String> keys = redisTemplate.keys("*numbers_" + auctionId + "*");
+    Set<String> keys = redisTemplate.keys("numbers_" + auctionId + "*");
 
     int result = 0;
     for (String key : keys) {
@@ -379,7 +379,7 @@ public class BroadcastingService {
     ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
     String auctionId = auctionRedis.get("auction");
 
-    ValueOperations<String, Long> numberRedis = redisTemplate.opsForValue();
+    ValueOperations<String, Long> numberRedis = redisGenericTemplate.opsForValue();
     numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers, TTL, TimeUnit.HOURS);
 
     log.info("연결 시 세션 수 : {}", numbers);
@@ -396,7 +396,7 @@ public class BroadcastingService {
     ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
     String auctionId = auctionRedis.get("auction");
 
-    ValueOperations<String, Long> numberRedis = redisTemplate.opsForValue();
+    ValueOperations<String, Long> numberRedis = redisGenericTemplate.opsForValue();
     numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers, TTL, TimeUnit.HOURS);
 
     log.info("연결 해제 시 세션 수 : {}", numbers);
