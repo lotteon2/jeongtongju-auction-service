@@ -1,12 +1,13 @@
 package com.jeontongju.auction.service;
 
+import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.AUCTION_NUMBERS;
 import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.BID_CHAT;
 import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.BID_INFO;
 import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.BID_RESULT;
 import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.CREATE_AUCTION_ORDER;
 
 import com.jeontongju.auction.client.ConsumerServiceFeignClient;
-import com.jeontongju.auction.config.WebSocketCustomHandler;
+import com.jeontongju.auction.config.WebSocketConfig;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -63,6 +65,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import org.springframework.web.socket.messaging.SubProtocolHandler;
 import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
 
 @Slf4j
@@ -74,7 +77,7 @@ public class BroadcastingService {
   private final AuctionProductRepository auctionProductRepository;
   private final BidInfoRepository bidInfoRepository;
   private final BidInfoHistoryRepository bidInfoHistoryRepository;
-  private final WebSocketCustomHandler webSocketCustomHandler;
+  private final ObjectProvider<SubProtocolWebSocketHandler> subProtocolHandlerObjectProvider;
 
   @Qualifier("redisStringTemplate")
   private final RedisTemplate redisTemplate;
@@ -332,7 +335,7 @@ public class BroadcastingService {
     template.convertAndSend("/sub/bid-result/" + bidResultListDto.getAuctionId(), bidResultListDto);
   }
 
-  @KafkaListener(topics = "auction-numbers")
+  @KafkaListener(topics = AUCTION_NUMBERS)
   public void pubChatNumbers(int sessions) {
     ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
     String auctionId = auctionRedis.get("auction");
@@ -375,7 +378,10 @@ public class BroadcastingService {
   @EventListener
   public void connectEvent(SessionConnectEvent sessionConnectEvent) {
     log.info("연결 성공, {}", sessionConnectEvent);
-    int webSocketSessions = webSocketCustomHandler.getStats().getWebSocketSessions();
+
+    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
+    int webSocketSessions = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+
     log.info("세션 인원 : {}", webSocketSessions);
     kafkaProcessor.send("auction-numbers", webSocketSessions);
   }
@@ -383,7 +389,10 @@ public class BroadcastingService {
   @EventListener
   public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
     log.info("연결 해제, {}", sessionDisconnectEvent);
-    int webSocketSessions = webSocketCustomHandler.getStats().getWebSocketSessions();
+
+    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
+    int webSocketSessions = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+
     log.info("세션 인원 : {}", webSocketSessions);
     kafkaProcessor.send("auction-numbers", webSocketSessions);
   }
