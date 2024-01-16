@@ -4,6 +4,7 @@ import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
 import com.jeontongju.auction.exception.AuctionProductNotFoundException;
 import java.util.Comparator;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -43,6 +44,10 @@ public class AuctionProductBidResponseDto extends AuctionProductResponseDto {
             .get()
             .getBidPrice();
     this.totalBid = auctionProduct.getBidInfoList().isEmpty() ? null
-        : (long) auctionProduct.getBidInfoList().size();
+        : (long) auctionProduct.getBidInfoList()
+            .stream()
+            .map(BidInfo::getConsumerId)
+            .collect(Collectors.toSet())
+            .size();
   }
 }
