@@ -361,11 +361,12 @@ public class BroadcastingService {
     int result = 0;
     for (String key : keys) {
       result += numberRedis.get(key);
+      log.info("key : {}, result : {}", key, numberRedis.get(key));
     }
 
-    log.info("참가 인원 : {}", Math.ceil((float)result / 4));
+    log.info("참가 인원 : {}", Math.ceil(result / 4.0));
 
-    template.convertAndSend("/sub/auction-numbers/" + auctionId, Math.ceil((float)result / 4));
+    template.convertAndSend("/sub/auction-numbers/" + auctionId, Math.ceil(result / 4.0));
   }
 
   @EventListener
@@ -373,13 +374,13 @@ public class BroadcastingService {
     log.info("연결 성공, {}", sessionConnectEvent);
 
     SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
-    int numbers = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+    Long numbers = (long) subProtocolWebSocketHandler.getStats().getWebSocketSessions();
 
     ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
     String auctionId = auctionRedis.get("auction");
 
-    ValueOperations<String, Integer> numberRedis = redisTemplate.opsForValue();
-    numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers);
+    ValueOperations<String, Long> numberRedis = redisTemplate.opsForValue();
+    numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers, TTL, TimeUnit.HOURS);
 
     log.info("연결 시 세션 수 : {}", numbers);
     kafkaProcessor.send(AUCTION_NUMBERS, 1);
@@ -390,13 +391,13 @@ public class BroadcastingService {
     log.info("연결 해제, {}", sessionDisconnectEvent);
 
     SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
-    int numbers = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+    Long numbers = (long) subProtocolWebSocketHandler.getStats().getWebSocketSessions();
 
     ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
     String auctionId = auctionRedis.get("auction");
 
-    ValueOperations<String, Integer> numberRedis = redisTemplate.opsForValue();
-    numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers);
+    ValueOperations<String, Long> numberRedis = redisTemplate.opsForValue();
+    numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers, TTL, TimeUnit.HOURS);
 
     log.info("연결 해제 시 세션 수 : {}", numbers);
     kafkaProcessor.send(AUCTION_NUMBERS, 1);
