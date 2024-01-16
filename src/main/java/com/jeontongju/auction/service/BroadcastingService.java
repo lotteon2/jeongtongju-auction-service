@@ -7,14 +7,13 @@ import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.BID_RESULT;
 import static io.github.bitbox.bitbox.util.KafkaTopicNameInfo.CREATE_AUCTION_ORDER;
 
 import com.jeontongju.auction.client.ConsumerServiceFeignClient;
-import com.jeontongju.auction.config.WebSocketConfig;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
 import com.jeontongju.auction.domain.BidInfoHistory;
 import com.jeontongju.auction.dto.redis.AuctionBidHistoryDto;
 import com.jeontongju.auction.dto.request.ChatMessageRequestDto;
-import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResponseDto;
+import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResultResponseDto;
 import com.jeontongju.auction.dto.socket.BidHistoryInprogressDto;
 import com.jeontongju.auction.dto.socket.BidResultDto;
 import com.jeontongju.auction.dto.socket.BidResultListDto;
@@ -39,7 +38,6 @@ import io.github.bitbox.bitbox.dto.AuctionOrderDto;
 import io.github.bitbox.bitbox.dto.MemberDto;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
 import java.text.NumberFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,7 +49,6 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
@@ -59,13 +56,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
-import org.springframework.web.socket.messaging.SubProtocolHandler;
 import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
 
 @Slf4j
@@ -185,7 +180,7 @@ public class BroadcastingService {
     kafkaProcessor.send(BID_INFO, auctionId);
   }
 
-  public AuctionBroadcastBidHistoryResponseDto enterAuction(Long consumerId,
+  public AuctionBroadcastBidHistoryResultResponseDto enterAuction(Long consumerId,
       MemberRoleEnum memberRoleEnum,
       String auctionId) {
     Auction auction = auctionRepository.findById(auctionId)
@@ -197,9 +192,16 @@ public class BroadcastingService {
 
     setCredit(consumerId, memberRoleEnum);
 
-    return AuctionBroadcastBidHistoryResponseDto.of(
+    ValueOperations<String, BidResultListDto> bidResultRedis = redisGenericTemplate.opsForValue();
+    BidResultListDto bidResultListDto = Objects.requireNonNullElse(
+        bidResultRedis.get("bid_result_" + auctionId),
+        BidResultListDto.create(auctionId)
+    );
+
+    return AuctionBroadcastBidHistoryResultResponseDto.of(
         AuctionBroadcastResponseDto.of(auction),
-        getPublishingBidHistory(auctionId)
+        getPublishingBidHistory(auctionId),
+        bidResultListDto
     );
   }
 

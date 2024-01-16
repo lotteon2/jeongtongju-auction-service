@@ -2,7 +2,7 @@ package com.jeontongju.auction.controller;
 
 import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.request.ChatMessageRequestDto;
-import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResponseDto;
+import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResultResponseDto;
 import com.jeontongju.auction.service.BroadcastingService;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
@@ -79,14 +79,14 @@ public class BroadcastingController {
   }
 
   @GetMapping("/api/auction/room/{auctionId}")
-  public ResponseEntity<ResponseFormat<AuctionBroadcastBidHistoryResponseDto>> enterStreaming(
+  public ResponseEntity<ResponseFormat<AuctionBroadcastBidHistoryResultResponseDto>> enterStreaming(
       @RequestHeader(required = false) Long memberId,
       @RequestHeader(required = false) MemberRoleEnum memberRole,
       @PathVariable String auctionId) {
 
     return ResponseEntity.ok()
         .body(
-            ResponseFormat.<AuctionBroadcastBidHistoryResponseDto>builder()
+            ResponseFormat.<AuctionBroadcastBidHistoryResultResponseDto>builder()
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.getReasonPhrase())
                 .detail("경매 방 입장 성공")
