@@ -50,6 +50,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -58,6 +59,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.socket.messaging.SessionConnectEvent;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
 
 @Slf4j
 @Service
@@ -68,6 +72,7 @@ public class BroadcastingService {
   private final AuctionProductRepository auctionProductRepository;
   private final BidInfoRepository bidInfoRepository;
   private final BidInfoHistoryRepository bidInfoHistoryRepository;
+  private SubProtocolWebSocketHandler subProtocolWebSocketHandler;
 
   @Qualifier("redisStringTemplate")
   private final RedisTemplate redisTemplate;
@@ -112,6 +117,9 @@ public class BroadcastingService {
       ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
       productIdx.set(auctionId + "_index", 0, TTL, TimeUnit.HOURS);
     }
+    ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
+    auctionRedis.set("auction", auctionId);
+
     auctionRepository.save(auction.toBuilder().status(AuctionStatusEnum.ING).build());
   }
 
@@ -126,6 +134,7 @@ public class BroadcastingService {
       throw new InvalidAuctionStatusException("이미 완료된 경매입니다.");
     }
 
+    redisTemplate.delete("auction");
     auctionRepository.save(
         auction.toBuilder()
             .status(AuctionStatusEnum.AFTER)
@@ -321,6 +330,13 @@ public class BroadcastingService {
     template.convertAndSend("/sub/bid-result/" + bidResultListDto.getAuctionId(), bidResultListDto);
   }
 
+  @KafkaListener(topics = "auction-numbers")
+  public void pubChatNumbers(int sessions) {
+    ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
+    String auctionId = auctionRedis.get("auction");
+    template.convertAndSend("/sub/auction-numbers/" + auctionId, sessions);
+  }
+
   public BidHistoryInprogressDto getPublishingBidHistory(String auctionId) {
     List<BroadcastProductResponseDto> productList = getAuctionProductListFromRedis(auctionId);
     String auctionProductId = getAuctionProductIdFromRedis(auctionId);
@@ -352,6 +368,22 @@ public class BroadcastingService {
     } else {
       throw new InvalidConsumerCreditException();
     }
+  }
+
+  @EventListener
+  public void connectEvent(SessionConnectEvent sessionConnectEvent) {
+    log.info("연결 성공, {}", sessionConnectEvent);
+    int webSocketSessions = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+    log.info("세션 인원 : {}", webSocketSessions);
+    kafkaProcessor.send("auction-numbers", webSocketSessions);
+  }
+
+  @EventListener
+  public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
+    log.info("연결 해제, {}", sessionDisconnectEvent);
+    int webSocketSessions = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+    log.info("세션 인원 : {}", webSocketSessions);
+    kafkaProcessor.send("auction-numbers", webSocketSessions);
   }
 
   private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {
