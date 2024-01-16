@@ -381,9 +381,7 @@ public class BroadcastingService {
 
     SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
     int webSocketSessions = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
-
-    log.info("세션 인원 : {}", webSocketSessions);
-    kafkaProcessor.send("auction-numbers", webSocketSessions);
+    kafkaProcessor.send("auction-numbers", Math.ceil((double)webSocketSessions / 4));
   }
 
   @EventListener
@@ -392,9 +390,7 @@ public class BroadcastingService {
 
     SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
     int webSocketSessions = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
-
-    log.info("세션 인원 : {}", webSocketSessions);
-    kafkaProcessor.send("auction-numbers", webSocketSessions);
+    kafkaProcessor.send("auction-numbers", Math.ceil((double)webSocketSessions / 4));
   }
 
   private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {
