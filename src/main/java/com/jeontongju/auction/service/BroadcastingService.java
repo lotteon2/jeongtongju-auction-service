@@ -357,14 +357,49 @@ public class BroadcastingService {
 
     ValueOperations<String, Integer> numberRedis = redisTemplate.opsForValue();
     Set<String> keys = redisTemplate.keys("numbers_" + auctionId + "*");
-    
-    int result = keys.stream()
-        .mapToInt(key -> numberRedis.get(key))
-        .sum();
+
+    int result = 0;
+    for (String key : keys) {
+      result += numberRedis.get(key);
+    }
 
     log.info("참가 인원 : {}", Math.ceil((float)result / 4));
 
     template.convertAndSend("/sub/auction-numbers/" + auctionId, Math.ceil((float)result / 4));
+  }
+
+  @EventListener
+  public void connectEvent(SessionConnectEvent sessionConnectEvent) {
+    log.info("연결 성공, {}", sessionConnectEvent);
+
+    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
+    int numbers = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+
+    ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
+    String auctionId = auctionRedis.get("auction");
+
+    ValueOperations<String, Integer> numberRedis = redisTemplate.opsForValue();
+    numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers);
+
+    log.info("연결 시 세션 수 : {}", numbers);
+    kafkaProcessor.send(AUCTION_NUMBERS, 1);
+  }
+
+  @EventListener
+  public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
+    log.info("연결 해제, {}", sessionDisconnectEvent);
+
+    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
+    int numbers = subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+
+    ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
+    String auctionId = auctionRedis.get("auction");
+
+    ValueOperations<String, Integer> numberRedis = redisTemplate.opsForValue();
+    numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers);
+
+    log.info("연결 해제 시 세션 수 : {}", numbers);
+    kafkaProcessor.send(AUCTION_NUMBERS, 1);
   }
 
   public BidHistoryInprogressDto getPublishingBidHistory(String auctionId) {
@@ -398,34 +433,6 @@ public class BroadcastingService {
     } else {
       throw new InvalidConsumerCreditException();
     }
-  }
-
-  @EventListener
-  public void connectEvent(SessionConnectEvent sessionConnectEvent) {
-    log.info("연결 성공, {}", sessionConnectEvent);
-
-    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
-
-    ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
-    String auctionId = auctionRedis.get("auction");
-
-    ValueOperations<String, Integer> chatRedis = redisTemplate.opsForValue();
-    chatRedis.set("numbers_" + auctionId + "_" + groupId, subProtocolWebSocketHandler.getStats().getWebSocketSessions());
-    kafkaProcessor.send(AUCTION_NUMBERS, 1);
-  }
-
-  @EventListener
-  public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
-    log.info("연결 해제, {}", sessionDisconnectEvent);
-
-    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
-
-    ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
-    String auctionId = auctionRedis.get("auction");
-
-    ValueOperations<String, Integer> chatRedis = redisTemplate.opsForValue();
-    chatRedis.set("numbers_" + auctionId + "_" + groupId, subProtocolWebSocketHandler.getStats().getWebSocketSessions());
-    kafkaProcessor.send(AUCTION_NUMBERS, 1);
   }
 
   private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {
