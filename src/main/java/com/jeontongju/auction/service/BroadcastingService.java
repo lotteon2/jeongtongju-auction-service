@@ -42,6 +42,7 @@ import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -414,6 +415,8 @@ public class BroadcastingService {
     while (bidHistoryList.size() < 5) {
       bidHistoryList.add(AuctionBidHistoryDto.of(new MemberDto(), "", 0L));
     }
+    
+    bidHistoryList.sort(Comparator.comparing(AuctionBidHistoryDto::getBidPrice).reversed());
 
     // 경매 상품 호가 조회
     ValueOperations<String, Long> askingPriceRedis = redisTemplate.opsForValue();
