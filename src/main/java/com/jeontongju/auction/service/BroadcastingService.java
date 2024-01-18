@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -57,11 +58,14 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import org.springframework.web.socket.messaging.SessionSubscribeEvent;
+import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
 
 @Slf4j
@@ -84,8 +88,11 @@ public class BroadcastingService {
   @Value("${profile.img}")
   private String profileImg;
 
-  private static final Long TTL = 600L;
+  @Value("${spring.kafka.consumer.group-id}")
+  private String groupId;
 
+  private static final Long TTL = 600L;
+  
   private final KafkaProcessor kafkaProcessor;
   private final SimpMessagingTemplate template;
 
@@ -324,34 +331,71 @@ public class BroadcastingService {
         ChatMessageDto.toKafkaChatMessageDto(message, memberDto, auctionId));
   }
 
+  // 채팅 전달
   @KafkaListener(topics = BID_CHAT)
   public void pubMessage(ChatMessageDto message) {
     template.convertAndSend("/sub/chat/" + message.getAuctionId(), message);
   }
 
+  // 입찰 내역, 호가 전달
   @KafkaListener(topics = BID_INFO)
   public void pubBidInfo(String auctionId) {
-    // 입찰 내역, 호가 전달
     template.convertAndSend("/sub/bid-info/" + auctionId, getPublishingBidHistory(auctionId));
   }
 
+  // 낙찰 내역 전달
   @KafkaListener(topics = BID_RESULT)
   public void pubBidResult(BidResultListDto bidResultListDto) {
     template.convertAndSend("/sub/bid-result/" + bidResultListDto.getAuctionId(), bidResultListDto);
   }
 
+  // 경매 인원 수 전달
   @KafkaListener(topics = AUCTION_NUMBERS)
   public void pubChatNumbers(int sign) {
     ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
     String auctionId = auctionRedis.get("auction");
 
-    ValueOperations<String, Integer> chatRedis = redisTemplate.opsForValue();
-    int chatNumbers = Objects.requireNonNullElse(chatRedis.get("chat_numbers_" + auctionId), 0);
-    chatRedis.set("chat_numbers_" + auctionId, chatNumbers + sign);
+    ValueOperations<String, Integer> numberRedis = redisGenericTemplate.opsForValue();
+    Set<String> keys = redisGenericTemplate.keys("numbers_" + auctionId + "*");
 
-    int result = (int) Math.ceil(((float)chatNumbers + sign)/ 4);
+    int result = 0;
+    for (String key : keys) {
+      result += numberRedis.get(key);
+    }
 
-    template.convertAndSend("/sub/auction-numbers/" + auctionId, result);
+    template.convertAndSend("/sub/auction-numbers/" + auctionId, Math.ceil(result / 4.0));
+  }
+
+  @EventListener
+  public void connectEvent(SessionConnectEvent sessionConnectEvent) {
+    log.info("연결 성공, {}", sessionConnectEvent);
+
+    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
+    Long numbers = (long) subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+
+    ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
+    String auctionId = auctionRedis.get("auction");
+
+    ValueOperations<String, Long> numberRedis = redisGenericTemplate.opsForValue();
+    numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers, TTL, TimeUnit.HOURS);
+
+    kafkaProcessor.send(AUCTION_NUMBERS, 1);
+  }
+
+  @EventListener
+  public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
+    log.info("연결 해제, {}", sessionDisconnectEvent);
+
+    SubProtocolWebSocketHandler subProtocolWebSocketHandler = subProtocolHandlerObjectProvider.getObject();
+    Long numbers = (long) subProtocolWebSocketHandler.getStats().getWebSocketSessions();
+
+    ValueOperations<String, String> auctionRedis = redisTemplate.opsForValue();
+    String auctionId = auctionRedis.get("auction");
+
+    ValueOperations<String, Long> numberRedis = redisGenericTemplate.opsForValue();
+    numberRedis.set("numbers_" + auctionId + "_" + groupId, numbers, TTL, TimeUnit.HOURS);
+
+    kafkaProcessor.send(AUCTION_NUMBERS, 1);
   }
 
   public BidHistoryInprogressDto getPublishingBidHistory(String auctionId) {
@@ -385,20 +429,6 @@ public class BroadcastingService {
     } else {
       throw new InvalidConsumerCreditException();
     }
-  }
-
-  @EventListener
-  public void connectEvent(SessionConnectEvent sessionConnectEvent) {
-    log.info("연결 성공, {}", sessionConnectEvent);
-
-    kafkaProcessor.send("auction-numbers", 1);
-  }
-
-  @EventListener
-  public void onDisconnectEvent(SessionDisconnectEvent sessionDisconnectEvent) {
-    log.info("연결 해제, {}", sessionDisconnectEvent);
-
-    kafkaProcessor.send("auction-numbers", -1);
   }
 
   private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {
