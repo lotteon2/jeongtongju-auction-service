@@ -10,17 +10,16 @@ import com.jeontongju.auction.client.ConsumerServiceFeignClient;
 import com.jeontongju.auction.domain.Auction;
 import com.jeontongju.auction.domain.AuctionProduct;
 import com.jeontongju.auction.domain.BidInfo;
-import com.jeontongju.auction.domain.BidInfoHistory;
 import com.jeontongju.auction.dto.redis.AuctionBidHistoryDto;
+import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
 import com.jeontongju.auction.dto.request.ChatMessageRequestDto;
 import com.jeontongju.auction.dto.response.AuctionBroadcastBidHistoryResultResponseDto;
+import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
+import com.jeontongju.auction.dto.response.BroadcastProductResponseDto;
 import com.jeontongju.auction.dto.socket.BidHistoryInprogressDto;
 import com.jeontongju.auction.dto.socket.BidResultDto;
 import com.jeontongju.auction.dto.socket.BidResultListDto;
 import com.jeontongju.auction.dto.socket.ChatMessageDto;
-import com.jeontongju.auction.dto.request.AuctionBidRequestDto;
-import com.jeontongju.auction.dto.response.AuctionBroadcastResponseDto;
-import com.jeontongju.auction.dto.response.BroadcastProductResponseDto;
 import com.jeontongju.auction.enums.AuctionProductStatusEnum;
 import com.jeontongju.auction.enums.AuctionStatusEnum;
 import com.jeontongju.auction.exception.AuctionNotFoundException;
@@ -28,21 +27,21 @@ import com.jeontongju.auction.exception.AuctionProductNotFoundException;
 import com.jeontongju.auction.exception.EmptyAuctionProductException;
 import com.jeontongju.auction.exception.InvalidAuctionStatusException;
 import com.jeontongju.auction.exception.InvalidConsumerCreditException;
-import com.jeontongju.auction.exception.SameBidPriceException;
 import com.jeontongju.auction.kafka.KafkaProcessor;
 import com.jeontongju.auction.repository.AuctionProductRepository;
 import com.jeontongju.auction.repository.AuctionRepository;
 import com.jeontongju.auction.repository.BidInfoHistoryRepository;
 import com.jeontongju.auction.repository.BidInfoRepository;
-import com.jeontongju.auction.vo.BidInfoHistoryId;
 import io.github.bitbox.bitbox.dto.AuctionOrderDto;
 import io.github.bitbox.bitbox.dto.MemberDto;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -59,14 +58,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
-import org.springframework.web.socket.messaging.SessionSubscribeEvent;
-import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
 
 @Slf4j
@@ -93,6 +89,7 @@ public class BroadcastingService {
   private String groupId;
 
   private static final Long TTL = 600L;
+  private static final Long FUTURE_MILLI_TIME_FROM_EPOCH = new Date(2100, 1, 1, 0, 0, 0).getTime();
 
   private final KafkaProcessor kafkaProcessor;
   private final SimpMessagingTemplate template;
@@ -164,29 +161,22 @@ public class BroadcastingService {
       throw new InvalidConsumerCreditException();
     }
 
-    // 2. 동일 상품 + 동일 입찰가 데이터 검사
+    // 2. ZSET 우선순위 검사 (bidPrice가 큰 순서, 같으면 입찰 시간이 빠른 순서)
     String auctionProductId = getAuctionProductIdFromRedis(auctionId);
-
     Long bidPrice = auctionBidRequestDto.getBidPrice();
-    bidInfoHistoryRepository.findById(BidInfoHistoryId.of(auctionProductId, bidPrice))
-        .ifPresent(bidInfoHistory -> {
-          throw new SameBidPriceException();
-        });
-
-    // 3. DynamoDB 저장
-    bidInfoHistoryRepository.save(auctionBidRequestDto.to(consumerId, auctionProductId));
-
-    // 4. 입찰 내역 저장
-    // TODO : Redis Util
-    ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
-
     AuctionBidHistoryDto historyDto = AuctionBidHistoryDto
         .of(memberDto, auctionProductId, bidPrice);
 
-    bidHistoryRedis.add("auction_product_id" + auctionProductId, historyDto, bidPrice);
+    long nanoTime = LocalDateTime.now().toInstant(ZoneOffset.ofHours(9)).getNano();
+    double nanoScore = (double)(FUTURE_MILLI_TIME_FROM_EPOCH - nanoTime) / FUTURE_MILLI_TIME_FROM_EPOCH;
+    double totalScore = bidPrice + nanoScore;
+
+    // 3. 입찰 내역 저장
+    ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
+    bidHistoryRedis.add("auction_product_id" + auctionProductId, historyDto, totalScore);
     redisGenericTemplate.expire("auction_product_id" + auctionProductId, TTL, TimeUnit.HOURS);
 
-    // 5. 입찰 완료 토픽 발행
+    // 3. 입찰 완료 토픽 발행
     kafkaProcessor.send(BID_INFO, auctionId);
   }
 
@@ -237,8 +227,7 @@ public class BroadcastingService {
     String auctionProductId = getAuctionProductIdFromRedis(auctionId);
 
     // 1. 경매 물품 입찰 내역 조회
-    List<BidInfoHistory> bidInfoHistoryList = bidInfoHistoryRepository
-        .findByAuctionProductId(auctionProductId);
+    List<AuctionBidHistoryDto> bidInfoHistoryList = getAuctionBidHistoryDto(auctionId);
 
     // 2. 입찰 내역이 없을 시 반환
     if (bidInfoHistoryList.isEmpty()) {
@@ -246,11 +235,11 @@ public class BroadcastingService {
     }
 
     // 3. 낙찰 내역에 해당하는 유저 크레딧 차감
-    BidInfoHistory successfulBid = bidInfoHistoryList.get(bidInfoHistoryList.size() - 1);
-    client.deductCredit(successfulBid.getConsumerId(), successfulBid.getBidPrice());
+    AuctionBidHistoryDto successfulBid = bidInfoHistoryList.get(bidInfoHistoryList.size() - 1);
+    client.deductCredit(successfulBid.getMemberId(), successfulBid.getBidPrice());
 
     // 4. RDB 내역 저장
-    Auction auction = auctionRepository.findById(successfulBid.getAuctionId())
+    Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
     AuctionProduct auctionProduct = auctionProductRepository.findById(auctionProductId)
         .orElseThrow(AuctionProductNotFoundException::new);
@@ -264,7 +253,7 @@ public class BroadcastingService {
     kafkaProcessor.send(
         CREATE_AUCTION_ORDER,
         AuctionOrderDto.of(
-            successfulBid.getConsumerId(), successfulBid.getBidPrice(),
+            successfulBid.getMemberId(), successfulBid.getBidPrice(),
             auctionProductId, auctionProduct.getName(),
             successfulBid.getBidPrice(), auctionProduct.getSellerId(),
             auctionProduct.getStoreName(), auctionProduct.getThumbnailImageUrl(),
@@ -293,7 +282,7 @@ public class BroadcastingService {
     kafkaProcessor.send(BID_INFO, auctionId);
 
     ValueOperations<String, MemberDto> memberRedis = redisGenericTemplate.opsForValue();
-    MemberDto memberDto = memberRedis.get("consumer_id_" + successfulBid.getConsumerId());
+    MemberDto memberDto = memberRedis.get("consumer_id_" + successfulBid.getMemberId());
     String nickname = memberDto.getNickname();
 
     kafkaProcessor.send(BID_CHAT,
@@ -307,7 +296,7 @@ public class BroadcastingService {
 
     bidResultListDto.addResult(
         BidResultDto.of(
-            successfulBid.getConsumerId(),
+            successfulBid.getMemberId(),
             nickname,
             auctionProductId,
             auctionProduct.getName(),
@@ -400,17 +389,8 @@ public class BroadcastingService {
   }
 
   public BidHistoryInprogressDto getPublishingBidHistory(String auctionId) {
-    List<BroadcastProductResponseDto> productList = getAuctionProductListFromRedis(auctionId);
-    String auctionProductId = getAuctionProductIdFromRedis(auctionId);
-
     // 경매 상품 입찰 내역 조회
-    ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
-    List<AuctionBidHistoryDto> bidHistoryList = new ArrayList<>(
-        Objects.requireNonNullElse(
-            bidHistoryRedis.reverseRange("auction_product_id" + auctionProductId, 0, 4),
-            Collections.emptyList()
-        )
-    );
+    List<AuctionBidHistoryDto> bidHistoryList = getAuctionBidHistoryDto(auctionId);
 
     while (bidHistoryList.size() < 5) {
       bidHistoryList.add(AuctionBidHistoryDto.of(new MemberDto(), "", 0L));
@@ -419,6 +399,9 @@ public class BroadcastingService {
     bidHistoryList.sort(Comparator.comparing(AuctionBidHistoryDto::getBidPrice).reversed());
 
     // 경매 상품 호가 조회
+    List<BroadcastProductResponseDto> productList = getAuctionProductListFromRedis(auctionId);
+    String auctionProductId = getAuctionProductIdFromRedis(auctionId);
+
     ValueOperations<String, Long> askingPriceRedis = redisTemplate.opsForValue();
     Long askingPrice = Objects.requireNonNullElse(
         askingPriceRedis.get("asking_price_" + auctionProductId), 0L);
@@ -436,6 +419,21 @@ public class BroadcastingService {
     } else {
       throw new InvalidConsumerCreditException();
     }
+  }
+
+  private List<AuctionBidHistoryDto> getAuctionBidHistoryDto(String auctionId) {
+    String auctionProductId = getAuctionProductIdFromRedis(auctionId);
+
+    // 경매 상품 입찰 내역 조회
+    ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
+    List<AuctionBidHistoryDto> bidHistoryList = new ArrayList<>(
+        Objects.requireNonNullElse(
+            bidHistoryRedis.reverseRange("auction_product_id" + auctionProductId, 0, 4),
+            Collections.emptyList()
+        )
+    );
+
+    return bidHistoryList;
   }
 
   private List<BroadcastProductResponseDto> getAuctionProductListFromRedis(String auctionId) {
@@ -462,20 +460,20 @@ public class BroadcastingService {
     return auctionProductList.get(index).getAuctionProductId();
   }
 
-  private List<BidInfo> convert(List<BidInfoHistory> list, Auction auction,
+  private List<BidInfo> convert(List<AuctionBidHistoryDto> list, Auction auction,
       AuctionProduct auctionProduct) {
     return list.stream()
         .map(history -> historyConvertToBidInfo(history, auction, auctionProduct))
         .collect(Collectors.toList());
   }
 
-  private BidInfo historyConvertToBidInfo(BidInfoHistory bidInfoHistory, Auction auction,
+  private BidInfo historyConvertToBidInfo(AuctionBidHistoryDto bidInfoHistory, Auction auction,
       AuctionProduct auctionProduct) {
     return BidInfo.builder()
         .auction(auction)
         .auctionProduct(auctionProduct)
         .bidPrice(bidInfoHistory.getBidPrice())
-        .consumerId(bidInfoHistory.getConsumerId())
+        .consumerId(bidInfoHistory.getMemberId())
         .build();
   }
 
