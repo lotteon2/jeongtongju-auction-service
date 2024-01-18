@@ -84,7 +84,7 @@ public class BroadcastingService {
   @Value("${profile.img}")
   private String profileImg;
 
-  private static final Long TTL = 6L;
+  private static final Long TTL = 600L;
 
   private final KafkaProcessor kafkaProcessor;
   private final SimpMessagingTemplate template;

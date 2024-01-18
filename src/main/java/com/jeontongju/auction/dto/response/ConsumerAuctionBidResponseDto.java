@@ -1,5 +1,6 @@
 package com.jeontongju.auction.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jeontongju.auction.domain.BidInfo;
 import java.time.LocalDate;
 import lombok.AccessLevel;
@@ -15,6 +16,8 @@ import lombok.NoArgsConstructor;
 public class ConsumerAuctionBidResponseDto {
   private String auctionId;
   private String auctionName;
+  @JsonIgnore
+  private String productId;
   private String productName;
   private String productImageUrl;
   private Long startingPrice;

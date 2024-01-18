@@ -218,7 +218,7 @@ public class AuctionService {
   public Page<ConsumerAuctionBidResponseDto> getConsumerBidInfo(Long consumerId,
       Pageable pageable) {
     Map<String, Long> lastBidMap = bidInfoRepository.findAllByIsBidTrue().stream()
-        .collect(Collectors.toMap(bidInfo -> bidInfo.getAuctionProduct().getName(),
+        .collect(Collectors.toMap(bidInfo -> bidInfo.getAuctionProduct().getAuctionProductId(),
             BidInfo::getBidPrice));
 
     List<ConsumerAuctionBidResponseDto> result = bidInfoRepository.findByConsumerId(consumerId)
@@ -233,7 +233,7 @@ public class AuctionService {
         .values()
         .stream()
         .map(ConsumerAuctionBidResponseDto::new)
-        .peek(dto -> dto.initLastBidPrice(lastBidMap.get(dto.getProductName())))
+        .peek(dto -> dto.initLastBidPrice(lastBidMap.get(dto.getProductId())))
         .collect(Collectors.toList()
         );
 
