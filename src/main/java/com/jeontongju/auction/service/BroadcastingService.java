@@ -92,7 +92,7 @@ public class BroadcastingService {
   private String groupId;
 
   private static final Long TTL = 600L;
-  
+
   private final KafkaProcessor kafkaProcessor;
   private final SimpMessagingTemplate template;
 
@@ -410,6 +410,10 @@ public class BroadcastingService {
             Collections.emptyList()
         )
     );
+
+    while (bidHistoryList.size() < 5) {
+      bidHistoryList.add(AuctionBidHistoryDto.of(new MemberDto(), "", 0L));
+    }
 
     // 경매 상품 호가 조회
     ValueOperations<String, Long> askingPriceRedis = redisTemplate.opsForValue();

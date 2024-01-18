@@ -50,7 +50,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @SpringBootTest
 @Transactional
-@ActiveProfiles("dev")
+@ActiveProfiles("prod")
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2, replace = AutoConfigureTestDatabase.Replace.ANY)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AuctionServiceTest {
