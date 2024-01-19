@@ -183,8 +183,10 @@ public class BroadcastingService {
 
     // 4. 입찰 내역 저장
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
-    bidHistoryRedis.add("auction_product_id" + auctionProductId, historyDto, totalScore);
-    redisGenericTemplate.expire("auction_product_id" + auctionProductId, TTL, TimeUnit.HOURS);
+    Double zscore = bidHistoryRedis.score("auction_product_id" + auctionProductId, historyDto);
+    if (zscore != null && zscore < totalScore) {
+        bidHistoryRedis.add("auction_product_id" + auctionProductId, historyDto, totalScore);
+    }
 
     // 5. 입찰 완료 토픽 발행
     kafkaProcessor.send(BID_INFO, auctionId);
