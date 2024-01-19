@@ -26,6 +26,7 @@ import com.jeontongju.auction.exception.AuctionNotFoundException;
 import com.jeontongju.auction.exception.AuctionProductNotFoundException;
 import com.jeontongju.auction.exception.EmptyAuctionProductException;
 import com.jeontongju.auction.exception.InvalidAuctionStatusException;
+import com.jeontongju.auction.exception.InvalidBidPriceException;
 import com.jeontongju.auction.exception.InvalidConsumerCreditException;
 import com.jeontongju.auction.kafka.KafkaProcessor;
 import com.jeontongju.auction.repository.AuctionProductRepository;
@@ -152,18 +153,26 @@ public class BroadcastingService {
 
   public void bidProduct(AuctionBidRequestDto auctionBidRequestDto, Long consumerId) {
     String auctionId = auctionBidRequestDto.getAuctionId();
+    Long bidPrice = auctionBidRequestDto.getBidPrice();
     // 1. 크레딧 검사
     ValueOperations<String, MemberDto> memberRedis = redisGenericTemplate.opsForValue();
     MemberDto memberDto = memberRedis.get("consumer_id_" + consumerId);
     Long memberCredit = memberDto.getCredit();
 
-    if (memberCredit == null || memberCredit < auctionBidRequestDto.getBidPrice()) {
+    if (memberCredit == null || memberCredit < bidPrice) {
       throw new InvalidConsumerCreditException();
     }
 
-    // 2. ZSET 우선순위 검사 (bidPrice가 큰 순서, 같으면 입찰 시간이 빠른 순서)
+    // 2. 시작가보다 낮은지 검사
+    ValueOperations<String, Integer> productIdx = redisTemplate.opsForValue();
+    int index = productIdx.get(auctionId + "_index");
+    long startingPrice = getAuctionProductListFromRedis(auctionId).get(index).getStartingPrice();
+    if (bidPrice < startingPrice) {
+      throw new InvalidBidPriceException();
+    }
+    
+    // 3. ZSET 우선순위 검사 (bidPrice가 큰 순서, 같으면 입찰 시간이 빠른 순서)
     String auctionProductId = getAuctionProductIdFromRedis(auctionId);
-    Long bidPrice = auctionBidRequestDto.getBidPrice();
     AuctionBidHistoryDto historyDto = AuctionBidHistoryDto
         .of(memberDto, auctionProductId, bidPrice);
 
@@ -171,12 +180,12 @@ public class BroadcastingService {
     double nanoScore = (double)(FUTURE_MILLI_TIME_FROM_EPOCH - nanoTime) / FUTURE_MILLI_TIME_FROM_EPOCH;
     double totalScore = bidPrice + nanoScore;
 
-    // 3. 입찰 내역 저장
+    // 4. 입찰 내역 저장
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
     bidHistoryRedis.add("auction_product_id" + auctionProductId, historyDto, totalScore);
     redisGenericTemplate.expire("auction_product_id" + auctionProductId, TTL, TimeUnit.HOURS);
 
-    // 3. 입찰 완료 토픽 발행
+    // 5. 입찰 완료 토픽 발행
     kafkaProcessor.send(BID_INFO, auctionId);
   }
 
@@ -185,6 +194,10 @@ public class BroadcastingService {
       String auctionId) {
     Auction auction = auctionRepository.findById(auctionId)
         .orElseThrow(AuctionNotFoundException::new);
+
+    if (auction.getStatus().equals(AuctionStatusEnum.BEFORE)) {
+      throw new InvalidAuctionStatusException("경매 준비중입니다.");
+    }
 
     if (auction.getStatus().equals(AuctionStatusEnum.AFTER)) {
       throw new InvalidAuctionStatusException("해당 경매는 이미 완료되었습니다.");
