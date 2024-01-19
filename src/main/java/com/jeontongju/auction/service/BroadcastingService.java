@@ -90,7 +90,7 @@ public class BroadcastingService {
   private String groupId;
 
   private static final Long TTL = 600L;
-  private static final Long FUTURE_MILLI_TIME_FROM_EPOCH = new Date(2100, 1, 1, 0, 0, 0).getTime();
+  private static final Long FUTURE_MILLI_TIME = 10000000000000L;
 
   private final KafkaProcessor kafkaProcessor;
   private final SimpMessagingTemplate template;
@@ -176,9 +176,10 @@ public class BroadcastingService {
     AuctionBidHistoryDto historyDto = AuctionBidHistoryDto
         .of(memberDto, auctionProductId, bidPrice);
 
-    long nanoTime = LocalDateTime.now().toInstant(ZoneOffset.ofHours(9)).getNano();
-    double nanoScore = (double)(FUTURE_MILLI_TIME_FROM_EPOCH - nanoTime) / FUTURE_MILLI_TIME_FROM_EPOCH;
+    long milliTime = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();
+    double nanoScore = (double)(FUTURE_MILLI_TIME- milliTime) / FUTURE_MILLI_TIME;
     double totalScore = bidPrice + nanoScore;
+    log.info("total score : {}", totalScore);
 
     // 4. 입찰 내역 저장
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
