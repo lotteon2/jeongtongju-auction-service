@@ -184,6 +184,7 @@ public class BroadcastingService {
     // 4. 입찰 내역 저장
     ZSetOperations<String, AuctionBidHistoryDto> bidHistoryRedis = redisGenericTemplate.opsForZSet();
     Double zscore = bidHistoryRedis.score("auction_product_id" + auctionProductId, historyDto);
+    bidHistoryRedis.addIfAbsent("auction_product_id" + auctionProductId, historyDto, totalScore);
     if (zscore != null && zscore < totalScore) {
         bidHistoryRedis.add("auction_product_id" + auctionProductId, historyDto, totalScore);
     }
