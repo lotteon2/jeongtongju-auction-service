@@ -1,6 +1,7 @@
 package com.jeontongju.auction.dto.socket;
 
 import com.jeontongju.auction.dto.request.ChatMessageRequestDto;
+import com.jeontongju.auction.util.Mosaic;
 import io.github.bitbox.bitbox.dto.MemberDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +26,7 @@ public class ChatMessageDto {
     return ChatMessageDto.builder()
         .auctionId(auctionId)
         .memberId(messageDto.getMemberId())
-        .memberNickname(memberDto.getNickname())
+        .memberNickname(Mosaic.nameMosaic(memberDto.getNickname()))
         .memberProfileImage(memberDto.getProfileImage())
         .message(messageDto.getMessage())
         .build();
