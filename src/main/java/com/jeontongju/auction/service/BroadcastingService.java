@@ -31,7 +31,6 @@ import com.jeontongju.auction.exception.InvalidConsumerCreditException;
 import com.jeontongju.auction.kafka.KafkaProcessor;
 import com.jeontongju.auction.repository.AuctionProductRepository;
 import com.jeontongju.auction.repository.AuctionRepository;
-import com.jeontongju.auction.repository.BidInfoHistoryRepository;
 import com.jeontongju.auction.repository.BidInfoRepository;
 import io.github.bitbox.bitbox.dto.AuctionOrderDto;
 import io.github.bitbox.bitbox.dto.MemberDto;
@@ -42,7 +41,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -74,7 +72,6 @@ public class BroadcastingService {
   private final AuctionRepository auctionRepository;
   private final AuctionProductRepository auctionProductRepository;
   private final BidInfoRepository bidInfoRepository;
-  private final BidInfoHistoryRepository bidInfoHistoryRepository;
   private final ObjectProvider<SubProtocolWebSocketHandler> subProtocolHandlerObjectProvider;
 
   @Qualifier("redisStringTemplate")
