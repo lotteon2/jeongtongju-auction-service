@@ -249,7 +249,7 @@ public class BroadcastingService {
     }
 
     // 3. 낙찰 내역에 해당하는 유저 크레딧 차감
-    AuctionBidHistoryDto successfulBid = bidInfoHistoryList.get(bidInfoHistoryList.size() - 1);
+    AuctionBidHistoryDto successfulBid = bidInfoHistoryList.get(0);
     client.deductCredit(successfulBid.getMemberId(), successfulBid.getBidPrice());
 
     // 4. RDB 내역 저장
